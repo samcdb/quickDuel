@@ -1,0 +1,23 @@
+{
+  "name": "quickduel",
+  "version": "1.0.0",
+  "description": "1v1 browser duel game",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samcdb/quickDuel.git"
+  },
+  "author": "Samuel de Beer",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/samcdb/quickDuel/issues"
+  },
+  "homepage": "https://github.com/samcdb/quickDuel#readme",
+  "dependencies": {
+    "ejs": "^3.1.5",
+    "express": "^4.17.1"
+  }
+}
