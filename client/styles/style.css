@@ -1,0 +1,25 @@
+
+.tile {
+	 width: 30%;
+	 background: orange;
+	 padding-bottom: 30%;
+	 float: left;
+	 margin: 1.66%;
+}
+
+.tile-clicked {
+	background-color: green;
+}
+
+#container {
+	max-width: 600px;
+	margin: 0 auto;
+}
+
+#winner-pov {
+	background-color: green!important;
+}
+
+#winner-pov {
+	background-color: red!important;
+}
