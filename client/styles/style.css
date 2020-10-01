@@ -19,6 +19,25 @@
 	background-color: green;
 }
 
+.chat-wrapper {
+	padding: 10px;
+  }
+  
+  .chat-wrapper form {
+	display: flex;
+  }
+  
+  .chat-wrapper form input {
+	font-size: 1.0rem;
+	margin: 0 10px 0 0;
+	padding: 0 5px;
+	flex-grow: 1;
+  }
+  
+  .chat-wrapper form button {
+	width: 80px;
+  }
+
 #container {
 	max-width: 600px;
 	margin: 0 auto;

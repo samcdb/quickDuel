@@ -1,3 +1,44 @@
+/*
+function Game() {
+	this.tileTable = [[-1, -2, -3], [-4, -5, -6], [-7, -8, -9]];
+	this.tiles = document.querySelectorAll('.tile');
+	this.gameFin = false;
+
+}
+
+Game.prototype.init = function() {
+	for (let i = 0; i < this.tiles.length; i++) {
+		this.tiles[i].addEventListener('click', function() {
+			if (this.gameFin === true) return;
+			//display to user that tile was clicked and change tileTable accordingly
+			this.classList.add('tile-clicked');
+			this.tileTable[Math.floor(i / 3)][i % 3] = 1;
+
+			if (//horizontal cases
+				this.tileTable[0][0] === this.tileTable[0][1] && this.tileTable[0][1] === this.tileTable[0][2] || 
+				this.tileTable[1][0] === this.tileTable[1][1] && this.tileTable[1][1] === this.tileTable[1][2] ||
+				this.tileTable[2][0] === this.tileTable[2][1] && this.tileTable[2][1] === this.tileTable[2][2] ||
+				//vertical cases
+				this.tileTable[0][0] === this.tileTable[1][0] && this.tileTable[1][0] === this.tileTable[2][0] ||
+				this.tileTable[0][1] === this.tileTable[1][1] && this.tileTable[1][1] === this.tileTable[2][1] ||
+				this.tileTable[0][2] === this.tileTable[1][2] && this.tileTable[1][2] === this.tileTable[2][2] ||
+				//diagonal cases
+				this.tileTable[0][0] === this.tileTable[1][1] && this.tileTable[1][1] === this.tileTable[2][2] ||
+				this.tileTable[0][2] === this.tileTable[1][1] && this.tileTable[1][1] === this.tileTable[2][0]
+				) {
+					console.log("game over");
+					this.gameOver(true);
+			}
+			
+		})
+	}
+};
+
+Game.prototype.
+
+*/
+
+
 let tileTable, tiles, gameFin;
 
 const sock = io();
@@ -64,3 +105,30 @@ function gameOverFlash(classToggle, count) {
 
 	}, 400);
 }
+
+const onChatSubmitted = (sock) => (e) => {
+	e.preventDefault();
+	  
+	const input = document.querySelector('#chat');
+	const text = input.value;
+	input.value = '';
+	  
+	sock.emit('message', text);
+ };
+
+const log = (text) => {
+	console.log('This is the text that was passed in: ' + text);
+	const parent = document.querySelector('#events');
+	const el = document.createElement('li');
+	el.innerHTML = text;
+  
+	parent.appendChild(el);
+	parent.scrollTop = parent.scrollHeight;
+  };
+
+  sock.on('message', log);
+
+  document
+    .querySelector('#chat-form')
+	.addEventListener('submit', onChatSubmitted(sock));
+
