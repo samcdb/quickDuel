@@ -7,6 +7,14 @@
 	 margin: 1.66%;
 }
 
+.winner-pov {
+	background-color: green;
+}
+
+.loser-pov {
+	background-color: red;
+}
+
 .tile-clicked {
 	background-color: green;
 }
@@ -16,10 +24,3 @@
 	margin: 0 auto;
 }
 
-#winner-pov {
-	background-color: green!important;
-}
-
-#winner-pov {
-	background-color: red!important;
-}

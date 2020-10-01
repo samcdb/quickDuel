@@ -1,9 +1,7 @@
 let tileTable, tiles, gameFin;
 
+const sock = io();
 init();
-
-
-
 
 function init() {
 	tileTable = [[-1, -2, -3], [-4, -5, -6], [-7, -8, -9]];
@@ -29,7 +27,7 @@ function init() {
 				tileTable[0][0] === tileTable[1][1] && tileTable[1][1] === tileTable[2][2] ||
 				tileTable[0][2] === tileTable[1][1] && tileTable[1][1] === tileTable[2][0]
 				) {
-					console.log("gameover");
+					console.log("game over");
 					gameOver(true);
 			}
 			
@@ -38,30 +36,31 @@ function init() {
 }
 
 
+
 function gameOver(win) {
 	let resultClass;
 	gameFin = true;
 
 	if (win === true){
-		resultClass = '#winner-pov';
+		resultClass = 'winner-pov';
 	} else {
-		resultClass = '#loser-pov';
+		resultClass = 'loser-pov';
 	}
-
+	sock.emit('message', 'Game over');
 	gameOverFlash(resultClass, 3);
 }
 
 function gameOverFlash(classToggle, count) {
-	let counter = 0;
 	
-	setTimeout(function flash() { 
+	setTimeout(function() { 
 		for (let i = 0; i < tiles.length; i++) {
 			tiles[i].classList.toggle(classToggle);
 		}
-		counter++;
-		if (counter < count) {
-			setTimeout(flash(), 1000);
+		
+		if (count > 0) {
+			gameOverFlash(classToggle, count - 1);
+			console.log(count);
 		}
 
-	}, 1000);
+	}, 400);
 }

@@ -29,10 +29,10 @@ server.listen(port, () => {
 io.on('connection', (socket) => {
     console.log('a client has connected');
     socket.emit('message','You are connected');
-    /*
+    
     socket.on('message', (text) => {
-        socket.emit('message', text); 
-    });*/
+        io.emit('message', text); 
+    });
 });
 
 
