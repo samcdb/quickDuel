@@ -38,7 +38,7 @@ Game.prototype.
 
 */
 
-
+//###################################################################### TICTAC ######################################################################
 let tileTable, tiles, gameFin;
 
 const sock = io();
@@ -51,34 +51,36 @@ function init() {
 
 	for (let i = 0; i < tiles.length; i++) {
 		tiles[i].addEventListener('click', function() {
+			console.log(i);
 			if (gameFin === true) return;
 			//display to user that tile was clicked and change tileTable accordingly
+			sock.emit('tileclick', i);
 			this.classList.add('tile-clicked');
 			tileTable[Math.floor(i / 3)][i % 3] = 1;
-
-			if (//horizontal cases
-				tileTable[0][0] === tileTable[0][1] && tileTable[0][1] === tileTable[0][2] || 
-				tileTable[1][0] === tileTable[1][1] && tileTable[1][1] === tileTable[1][2] ||
-				tileTable[2][0] === tileTable[2][1] && tileTable[2][1] === tileTable[2][2] ||
-				//vertical cases
-				tileTable[0][0] === tileTable[1][0] && tileTable[1][0] === tileTable[2][0] ||
-				tileTable[0][1] === tileTable[1][1] && tileTable[1][1] === tileTable[2][1] ||
-				tileTable[0][2] === tileTable[1][2] && tileTable[1][2] === tileTable[2][2] ||
-				//diagonal cases
-				tileTable[0][0] === tileTable[1][1] && tileTable[1][1] === tileTable[2][2] ||
-				tileTable[0][2] === tileTable[1][1] && tileTable[1][1] === tileTable[2][0]
-				) {
-					console.log("game over");
-					gameOver(true);
-			}
-			
+			checkWinLose();
 		})
 	}
 }
 
+function checkWinLose() {
+	if (//horizontal cases
+		tileTable[0][0] === tileTable[0][1] && tileTable[0][1] === tileTable[0][2] || 
+		tileTable[1][0] === tileTable[1][1] && tileTable[1][1] === tileTable[1][2] ||
+		tileTable[2][0] === tileTable[2][1] && tileTable[2][1] === tileTable[2][2] ||
+		//vertical cases
+		tileTable[0][0] === tileTable[1][0] && tileTable[1][0] === tileTable[2][0] ||
+		tileTable[0][1] === tileTable[1][1] && tileTable[1][1] === tileTable[2][1] ||
+		tileTable[0][2] === tileTable[1][2] && tileTable[1][2] === tileTable[2][2] ||
+		//diagonal cases
+		tileTable[0][0] === tileTable[1][1] && tileTable[1][1] === tileTable[2][2] ||
+		tileTable[0][2] === tileTable[1][1] && tileTable[1][1] === tileTable[2][0]
+		) {
+			console.log("game over");
+			goodGame(true);
+	}
+}
 
-
-function gameOver(win) {
+function goodGame(win) {
 	let resultClass;
 	gameFin = true;
 
@@ -132,3 +134,33 @@ const log = (text) => {
     .querySelector('#chat-form')
 	.addEventListener('submit', onChatSubmitted(sock));
 
+sock.on('tileclick', () => {
+
+} );
+
+//###################################################################### TICTAC ######################################################################
+
+//###################################################################### AIM ######################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//###################################################################### AIM ######################################################################

@@ -19,6 +19,10 @@
 	background-color: green;
 }
 
+.enemy-tile-clicked {
+	background-color: red;
+}
+
 .chat-wrapper {
 	padding: 10px;
   }
@@ -38,7 +42,7 @@
 	width: 80px;
   }
 
-#container {
+#screen-tictac {
 	max-width: 600px;
 	margin: 0 auto;
 }
