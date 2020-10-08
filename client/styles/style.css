@@ -1,54 +1,56 @@
-
 .tile {
-	 width: 30%;
-	 background: orange;
-	 padding-bottom: 30%;
-	 float: left;
-	 margin: 1.66%;
-}
-
-.winner-pov {
-	background-color: green;
-}
-
-.loser-pov {
-	background-color: red;
+  width: 30%;
+  background: orange;
+  padding-bottom: 30%;
+  float: left;
+  margin: 1.66%;
 }
 
 .tile-clicked {
-	background-color: green;
+  background-color: green;
 }
 
 .enemy-tile-clicked {
-	background-color: red;
+  background-color: red;
+}
+
+.winner-pov {
+  background-color: green;
+}
+
+.loser-pov {
+  background-color: red;
 }
 
 .chat-wrapper {
-	padding: 10px;
-  }
-  
-  .chat-wrapper form {
-	display: flex;
-  }
-  
-  .chat-wrapper form input {
-	font-size: 1.0rem;
-	margin: 0 10px 0 0;
-	padding: 0 5px;
-	flex-grow: 1;
-  }
-  
-  .chat-wrapper form button {
-	width: 80px;
-  }
+  padding: 10px;
+}
+
+.chat-wrapper form {
+  display: flex;
+}
+
+.chat-wrapper form input {
+  font-size: 1rem;
+  margin: 0 10px 0 0;
+  padding: 0 5px;
+  flex-grow: 1;
+}
+
+.chat-wrapper form button {
+  width: 80px;
+}
 
 #screen-tictac {
-	max-width: 600px;
-	margin: 0 auto;
-	display: none;
+  max-width: 600px;
+  margin: 0 auto;
+  display: none;
 }
 
 #screen-lobby {
-	display: block;
+  display: block;
 }
 
+#timer {
+  display: none;
+}

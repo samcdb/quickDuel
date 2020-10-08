@@ -1,39 +1,42 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<title>Naughts and Crosses</title>
-	<link rel="stylesheet" type="text/css" href="styles/style.css">
-</head>
-<body>
+  <head>
+    <title>Naughts and Crosses</title>
+    <link rel="stylesheet" type="text/css" href="styles/style.css" />
+  </head>
+  <body>
+    <div id="screen-lobby">
+      <h1>WAITING FOR GAME</h1>
+    </div>
 
-	<div id="screen-lobby">
-		<h1>WAITING FOR GAME</h1>
-	</div>
+    <div id="screen-tictac">
+      <div class="tile"></div>
+      <div class="tile"></div>
+      <div class="tile"></div>
+      <div class="tile"></div>
+      <div class="tile"></div>
+      <div class="tile"></div>
+      <div class="tile"></div>
+      <div class="tile"></div>
+      <div class="tile"></div>
 
-	<div id="screen-tictac">
-		<div class='tile'></div>
-		<div class='tile'></div>
-		<div class='tile'></div>
-		<div class='tile'></div>
-		<div class='tile'></div>
-		<div class='tile'></div>
-		<div class='tile'></div>
-		<div class='tile'></div>
-		<div class='tile'></div>
-	
-	<div class="controls-wrapper">
-		<ul id="events"></ul>
-		<div class="controls">
-		  <div class="chat-wrapper">
-			<form id="chat-form">
-			  <input id="chat" autocomplete="off" title="chat"/>
-			  <button id="say">Say</button>
-			</form>
-		  </div>
-		</div>
-	  </div>
-	</div>
-	<script src="/socket.io/socket.io.js"></script>
-	<script type="text/javascript" src='src/client.js'></script>
-</body>
+      <div class="controls-wrapper">
+        <ul id="events"></ul>
+        <div class="controls">
+          <div class="chat-wrapper">
+            <form id="chat-form">
+              <input id="chat" autocomplete="off" title="chat" />
+              <button id="say">Say</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div id="timer">
+        <h2>Time: <span id="stopwatch">2:00</span></h2>
+      </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript" src="src/client.js"></script>
+  </body>
 </html>
