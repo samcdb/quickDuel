@@ -48,19 +48,21 @@ io.on("connection", (socket) => {
     // don't do anything if it is not this player's turn
     if (game.whoseTurn() !== playerID) return;
     // compute move
+    clearInterval(game.timeInterval);
     const gameWon = makeMove(tileNum, playerID);
     const currentPlayerID = playerID; //having naming issues with passing objects that have the same property names - fix this
     // emit move to both players
-    io.to(duelRoom).emit("tileclick", { tileNum, currentPlayerID });
+    io.to(gameID).emit("tileclick", { tileNum, currentPlayerID });
 
     if (gameWon === true) {
       socket.emit("message", "NICE");
-      io.to(duelRoom).emit("message", "TIC TAC TOE OVER");
-      io.to(duelRoom).emit("gameUpdate", playerID); //change
+      io.to(gameID).emit("message", "TIC TAC TOE OVER");
+      io.to(gameID).emit("gameUpdate", playerID); //change
+      return;
     }
 
     game.updateLastPlayer(playerID);
-    game.setTime(2.0);
+    game.turnTimer(100);
   };
 
   socket.on("message", (text) => io.emit("message", text));
@@ -103,27 +105,16 @@ function lookForGame(lobby) {
 
 // start the game for the matched players
 function startGame(game) {
-  let firstTurn = Math.floor(Math.random() * 2);
-  let secondTurn = firstTurn ? 0 : 1;
-  game.lastPlayer = players[secondTurn].id;
+  let secondTurn = Math.floor(Math.random() * 2);
+  game.lastPlayer = game.players[secondTurn].id;
   //set up both players
   io.to(game.gameID).emit("startGame", game.gameID);
-
-  game.players[firstTurn].emit("turnUpdate", {
-    isTurn: true,
-    time: newGame.timeLeft,
-  }); //show timer
-
-  game.players[secondTurn].emit("turnUpdate", {
-    isTurn: false,
-    time: newGame.timeLeft,
-  }); //don't show timer
-
-  game.setTime(2.0);
+  game.turnTimer(100);
 }
 
 // finds the relevant game
 function getGame(gameID) {
+  console.log("looking for game:");
   let count = 0;
   let game = gameArr[count];
   // find the game that the current move happened in (this should be changed to be more efficient)

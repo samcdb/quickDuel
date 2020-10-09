@@ -1,4 +1,4 @@
-const { emit } = require("process");
+//const { emit } = require("process");
 
 const createTicTacToe = (sock) => {
   let tiles;
@@ -27,7 +27,6 @@ const createTicTacToe = (sock) => {
 
       if (count > 0) {
         gameOverFlash(classToggle, count - 1);
-        console.log(count);
       }
     }, 400);
   }
@@ -96,16 +95,16 @@ const log = (text) => {
     console.log("players starting game");
     document.getElementById("screen-tictac").style.display = "block";
     document.getElementById("screen-lobby").style.display = "none";
-    console.log(text);
   });
 
   sock.on("turnUpdate", ({ isTurn, time }) => {
     if (isTurn) {
       document.getElementById("timer").style.display = "block";
+      document.getElementById("seconds").textContent = Math.floor(time / 1000);
+      document.getElementById("ms").textContent = (time % 1000) / 10;
     } else {
       document.getElementById("timer").style.display = "none";
     }
-    document.getElementById("stopwatch").text = time;
   });
 
   for (let i = 0; i < tiles.length; i++) {
