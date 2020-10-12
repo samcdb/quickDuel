@@ -41,13 +41,19 @@
   width: 80px;
 }
 
-#screen-tictac {
+#aim-screen {
+  width: 50%;
+  height: 700px;
+  border: 5px solid black;
+}
+
+#tictac-screen {
   max-width: 600px;
   margin: 0 auto;
   display: none;
 }
 
-#screen-lobby {
+#lobby-screen {
   display: block;
 }
 
