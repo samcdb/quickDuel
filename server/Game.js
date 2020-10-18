@@ -1,5 +1,5 @@
-const { seq } = require("async");
-const { SSL_OP_NO_QUERY_MTU } = require("constants");
+//const { seq } = require("async");
+//const { SSL_OP_NO_QUERY_MTU } = require("constants");
 
 class Game {
   constructor(player1, player2) {
@@ -11,6 +11,7 @@ class Game {
     this.playersReady = 0;
     this.roundCount = 0;
     // aimgame only
+    this.aimBtnWidth;
     this.coordArr = [];
     this.reactionArr = [];  // first is attack, second is defend
   }
@@ -56,10 +57,11 @@ class Game {
     );
   }
   // ############################## aim game ######################
-  makeCoordArr(numTurns, width, height) {
+  createAimDuel(numTurns, btnWidth, courtWidth, courtHeight) {
     for(let i = 0; i < numTurns; i++) {
-      let x = Math.floor((Math.random() * width));
-      let y = Math.floor((Math.random() * height));
+      this.aimBtnWidth = btnWidth;
+      let x = Math.floor(btnWidth + (Math.random() * (courtWidth - 2 * btnWidth)));
+      let y = Math.floor(courtHeight / 2 + btnWidth + (Math.random() * ((courtHeight / 2) - 2 * btnWidth)));
       this.coordArr.push([x, y]);
     }
   }
@@ -68,23 +70,30 @@ class Game {
     if (this.coordArr.length === 0) {
       console.log("aim duel over");
       this.roundCount++;
-      this.players[0].emit("startNextMode", this.lastPlayer); //change
-      this.players[1].emit("startNextMode", this.lastPlayer); //change
+      // need to randomise next game
+      let fromMode = "aim-game"       // implement this.currentMode
+      let toMode = "tictac-game"
+      this.players[0].emit("startNextMode", {fromMode, toMode}); //change
+      this.players[1].emit("startNextMode", {fromMode, toMode}); //change
       return;
     }
     
-    let attacker = (this.lastPlayer === this.players[0].id) ? 1 : 0;
+    let attacker = (this.lastPlayer === this.players[0].id) ? 1 : 0; 
     let defender = (this.lastPlayer === this.players[0].id) ? 0 : 1;
     let coords = this.coordArr.pop();
+
     console.log("coords: " + coords);
+
     this.players[attacker].emit("turnUpdateAim", {
       attacking: true,
       coords: coords,
+      btnWidth: this.aimBtnWidth,
     }); 
 
     this.players[defender].emit("turnUpdateAim", {
       attacking: false,
-      coords: coords
+      coords: coords,
+      btnWidth: this.aimBtnWidth,
     });
 
     this.timeInterval = setTimeout(function() {

@@ -96,7 +96,7 @@ const log = (text) => {
     console.log("players starting game");
     //#################################
     //change
-    document.getElementById("aim-screen").style.display = "block";
+    document.getElementById("aim-game").style.display = "block";
     document.getElementById("lobby-screen").style.display = "none";
     console.log("I have the ID " + gameID);
     sock.emit("startNextMode", gameID);
@@ -120,7 +120,7 @@ const log = (text) => {
     }
   });
 
-  sock.on("tileClick", ({ tileNum, currentPlayerID }) => {
+  sock.on("tileClick", ({ tileNum, currentPlayerID}) => {
     console.log("client ID = " + playerID + " received = " + currentPlayerID);
     console.log("tile: " + tileNum);
     console.log("tiles: " + tiles.length);
@@ -131,7 +131,24 @@ const log = (text) => {
     }
   });
 
-  sock.on("turnUpdateAim", ({attacking, coords}) => {
+  sock.on("turnUpdateAim", ({attacking, coords, btnWidth}) => {
+    let activeArea = document.getElementById("active-area");
+    let areaWidth = activeArea.offsetWidth;
+    let areaHeight = activeArea.offsetHeight;
+    let enemyBtn = document.getElementById("enemy-btn");
+
+    enemyBtn.style.width = btnWidth + "px";
+    enemyBtn.style.height = btnWidth + "px";
+    enemyBtn.style.left = areaWidth / 2 + (areaWidth / 2 - coords[0]) - btnWidth + "px";
+    enemyBtn.style.top =  areaHeight / 2 - (coords[1] - areaHeight / 2) + "px";
+    enemyBtn.style.display = "block";
+
+    aimBtn.style.width = btnWidth + "px";
+    aimBtn.style.height = btnWidth + "px";
+    aimBtn.style.left = coords[0] + "px";
+    aimBtn.style.top =  coords[1] + "px";
+    aimBtn.style.display = "block";
+
     if (attacking) {
       console.log("attack");
     } else {
@@ -142,9 +159,14 @@ const log = (text) => {
     stopWatch();
   });
 
-  sock.on("startNextMode", () => {
+  sock.on("startNextMode", ({fromMode, toMode}) => {
     //transition
     console.log("starting next game mode");
+    //
+    console.log("transition from " + fromMode + " to " + toMode );
+    document.getElementById(fromMode).style.display = "none";
+    document.getElementById(toMode).style.display = "block";
+
     sock.emit("startNextMode", gameID);
   });
   for (let i = 0; i < tiles.length; i++) {
@@ -152,12 +174,14 @@ const log = (text) => {
       console.log(i);
       const tileNum = i;
       //display to user that tile was clicked and change tileTable accordingly
-      sock.emit("tileclick", { tileNum, playerID, gameID});
+      sock.emit("tileClick", { tileNum, playerID, gameID});
     });
   }
 
+  // on click listener for aim game button
   aimBtn.addEventListener("click", () => {
     let timeTaken = stopWatch();
+    console.log("time taken: " + timeTaken);
     sock.emit("aimClick", {timeTaken, playerID, gameID});
     aimBtn.style.display = "none";
   });

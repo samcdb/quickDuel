@@ -46,7 +46,7 @@ io.on("connection", (socket) => {
     const gameWon = makeMove(tileNum, playerID);
     const currentPlayerID = playerID; //having naming issues with passing objects that have the same property names - fix this
     // emit move to both players
-    io.to(game.gameID).emit("tileclick", { tileNum, currentPlayerID });
+    io.to(game.gameID).emit("tileClick", { tileNum, currentPlayerID });
 
     if (gameWon === true) {
       socket.emit("message", "NICE");
@@ -59,7 +59,7 @@ io.on("connection", (socket) => {
     game.update0XDuel(100);
   };
 
-  const aimClick = ({timeTaken, playerID}) => {
+  const aimClick = ({timeTaken, playerID, gameID}) => {
     let game = getGame(gameID);
 
     if (game.whoseTurn() === playerID) {
@@ -70,8 +70,8 @@ io.on("connection", (socket) => {
 
     if (game.reactionArr.length === 2) {
       clearInterval(game.timeInterval);
-      let attacker = (this.lastPlayer === this.players[0].id) ? 1 : 0;
-      let defender = (this.lastPlayer === this.players[0].id) ? 0 : 1;
+      let attacker = (game.lastPlayer === game.players[0].id) ? 1 : 0;
+      let defender = (game.lastPlayer === game.players[0].id) ? 0 : 1;
       let attackSuccess = game.reactionArr[0] < game.reactionArr[1];
 
       if (attackSuccess) {
@@ -107,7 +107,7 @@ io.on("connection", (socket) => {
       if (game.roundCount % 2 === 0){
         console.log("starting aim game");
         game.playersReady = 0;
-        game.makeCoordArr(3,5,5); 
+        game.createAimDuel(100, 40, 900, 804); 
         game.updateAimDuel();
       } else {
         console.log('Starting 0 X');
