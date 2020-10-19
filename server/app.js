@@ -64,25 +64,27 @@ io.on("connection", (socket) => {
 
     if (game.whoseTurn() === playerID) {
       game.reactionArr[0] = timeTaken;  //attacker
+      //console.log("attacked");
     } else {
       game.reactionArr[1] = timeTaken;  //defender
+     // console.log("defended");
     }
 
-    if (game.reactionArr.length === 2) {
+    if (game.reactionArr[0] && game.reactionArr[1]) {     // CANNOT END TURN AFTER RECEIVING FIRST CLICK IN CASE OF LATENCY
+      console.log("both clicked");
       clearInterval(game.timeInterval);
       let attacker = (game.lastPlayer === game.players[0].id) ? 1 : 0;
       let defender = (game.lastPlayer === game.players[0].id) ? 0 : 1;
       let attackSuccess = game.reactionArr[0] < game.reactionArr[1];
-
+     
       if (attackSuccess) {
         // decrease health bar
-        console.log("successful attack");
+        console.log("BOTH HAVE CLICKED");
+        game.updateHealth(defender, -10);
+       // game.attackAnimation(attacker, "aim");
       }
 
       game.lastPlayer = game.players[attacker].id;
-      game.reactionArr = [];
-      game.players[attacker].emit("attack", attackSuccess);
-      game.players[defender].emit("defend", attackSuccess);
       game.updateAimDuel();
     }
   };
@@ -164,12 +166,9 @@ function startGame(game) {
 
 // finds the relevant game
 function getGame(gameID) {
-  console.log("getGame ID "+ gameID);
   let count = 0;
   let game = gameArr[count];
-
   while (game.gameID !== gameID) {
-    console.log("shouldn't get here");
     count++;
     game = gameArr[count];
   }

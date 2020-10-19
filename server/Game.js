@@ -1,9 +1,10 @@
 //const { seq } = require("async");
 //const { SSL_OP_NO_QUERY_MTU } = require("constants");
+const Player = require("./Player");
 
 class Game {
   constructor(player1, player2) {
-    this.players = [player1, player2];
+    this.players = [new Player(player1, 100), new Player(player2, 100)];
     this.gameID = player1.id + player2.id + Math.floor(Math.random() * 3000); //find a better way to make unique id
     this.lastPlayer = player1.id;
     this.timeLeft = 0;
@@ -14,6 +15,24 @@ class Game {
     this.aimBtnWidth;
     this.coordArr = [];
     this.reactionArr = [];  // first is attack, second is defend
+    this.testCount = 0;
+  }
+
+  updateHealth(playerNum, hpChange) {
+    let player = this.players[playerNum];
+    player.health += hpChange;
+    
+    this.players[0].conn.emit("updateHealth", {id: player.id, hp: player.health}); 
+    this.players[1].conn.emit("updateHealth", {id: player.id, hp: player.health}); 
+
+    if (player.isDead()) {
+      this.gameOver();
+    }
+
+  }
+
+  gameOver() {
+    console.log("game over");
   }
   
   whoseTurn() {
@@ -33,12 +52,12 @@ class Game {
 
     this.timeInterval = setInterval(
       function () {
-        this.players[turnNow].emit("turnUpdate0X", {
+        this.players[turnNow].conn.emit("turnUpdate0X", {
           isTurn: true,
           time: this.timeLeft,
         }); //show timer
 
-        this.players[notNow].emit("turnUpdate0X", {
+        this.players[notNow].conn.emit("turnUpdate0X", {
           isTurn: false,
           time: this.timeLeft,
         }); //don't show timer
@@ -47,8 +66,8 @@ class Game {
 
         if (this.timeLeft <= 0) {
           clearInterval(this.timeInterval);
-          this.players[0].emit("gameUpdate", this.lastPlayer); //change
-          this.players[1].emit("gameUpdate", this.lastPlayer); //change
+          this.players[0].conn.emit("gameUpdate", this.lastPlayer); //change
+          this.players[1].conn.emit("gameUpdate", this.lastPlayer); //change
           this.lastPlayer = this.players[turnNow];
         }
         console.log("time left: " + this.timeLeft);
@@ -67,30 +86,31 @@ class Game {
   }
 
   updateAimDuel() {
+    this.reactionArr = [];
+    console.log("player 1 health: " + this.players[0].health);
+    console.log("player 2 health: " + this.players[1].health);
     if (this.coordArr.length === 0) {
       console.log("aim duel over");
       this.roundCount++;
       // need to randomise next game
       let fromMode = "aim-game"       // implement this.currentMode
       let toMode = "tictac-game"
-      this.players[0].emit("startNextMode", {fromMode, toMode}); //change
-      this.players[1].emit("startNextMode", {fromMode, toMode}); //change
+      this.players[0].conn.emit("startNextMode", {fromMode, toMode}); //change
+      this.players[1].conn.emit("startNextMode", {fromMode, toMode}); //change
       return;
     }
-    
+     
     let attacker = (this.lastPlayer === this.players[0].id) ? 1 : 0; 
     let defender = (this.lastPlayer === this.players[0].id) ? 0 : 1;
     let coords = this.coordArr.pop();
 
-    console.log("coords: " + coords);
-
-    this.players[attacker].emit("turnUpdateAim", {
+    this.players[attacker].conn.emit("turnUpdateAim", {
       attacking: true,
       coords: coords,
       btnWidth: this.aimBtnWidth,
     }); 
 
-    this.players[defender].emit("turnUpdateAim", {
+    this.players[defender].conn.emit("turnUpdateAim", {
       attacking: false,
       coords: coords,
       btnWidth: this.aimBtnWidth,
@@ -98,25 +118,14 @@ class Game {
 
     this.timeInterval = setTimeout(function() {
       // case when only 1 player has clicked in time
-      let attackSuccess = false;
-
       if (this.reactionArr[0]) {
         //attack success
-        attackSuccess = true;
-        this.players[attacker].emit("attack", attackSuccess);
-        this.players[defender].emit("defend", attackSuccess);
-
-      } else if (this.reactionArr[1]) {
-        this.players[attacker].emit("attack", attackSuccess);
-        this.players[defender].emit("defend", attackSuccess);
-      } else {
-        console.log("no one clicked in time");
-      }
-      // actually need to repeat the emit twice as nothing must happen if reactionArr empty
-      
+        this.updateHealth(defender, -10);
+      } 
+  
       this.lastPlayer = this.players[attacker].id;
       this.updateAimDuel();
-    }.bind(this), 2000);
+    }.bind(this), 5000);
     
   }
 

@@ -110,6 +110,18 @@ const log = (text) => {
     }
   });
 
+  sock.on("updateHealth", ({id, hp}) => {
+    console.log("hi");
+    let playerHealthBar = document.getElementById("player-hp-bar");
+    let enemyHealthBar = document.getElementById("enemy-hp-bar");
+    console.log(hp);
+    if (playerID === id) {
+      playerHealthBar.height = hp + "%";
+    } else {
+      enemyHealthBar.height = hp + "%";
+    }
+  });
+
   sock.on("turnUpdate0X", ({ isTurn, time }) => {
     if (isTurn) {
       document.getElementById("timer").style.display = "block";
@@ -147,6 +159,11 @@ const log = (text) => {
     aimBtn.style.height = btnWidth + "px";
     aimBtn.style.left = coords[0] + "px";
     aimBtn.style.top =  coords[1] + "px";
+    if (attacking) {
+      aimBtn.style.backgroundColor = "green";
+    } else {
+      aimBtn.style.backgroundColor = "blue";
+    }
     aimBtn.style.display = "block";
 
     if (attacking) {
@@ -181,9 +198,8 @@ const log = (text) => {
   // on click listener for aim game button
   aimBtn.addEventListener("click", () => {
     let timeTaken = stopWatch();
-    console.log("time taken: " + timeTaken);
-    sock.emit("aimClick", {timeTaken, playerID, gameID});
     aimBtn.style.display = "none";
+    sock.emit("aimClick", {timeTaken, playerID, gameID});
   });
   document
     .querySelector("#chat-form")

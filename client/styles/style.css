@@ -41,6 +41,35 @@
   width: 80px;
 }
 
+.high-hp {
+  background-color: green;
+}
+
+.med-hp {
+  background-color: orange;
+}
+
+.low-hp {
+  background-color: red;
+}
+
+#player-hp-container,
+#enemy-hp-container {
+  float: left;
+  border: 2px solid black;
+  height: 250px;
+  width: 75px;
+  position: relative;
+}
+
+#enemy-hp-bar,
+#player-hp-bar {
+  position: absolute;
+  bottom: 0;
+  height: 100%;
+  width: 100%;
+}
+
 #aim-game {
   display: none;
 }
@@ -82,7 +111,7 @@
 
 #action-btn,
 #enemy-btn {
-  position: relative;
+  position: absolute;
   display: none;
   border-radius: 50%;
 }

@@ -1,12 +1,21 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Naughts and Crosses</title>
+    <title>Quick Duel</title>
     <link rel="stylesheet" type="text/css" href="styles/style.css" />
   </head>
   <body>
+    <div id="game-container">
     <div id="lobby-screen">
       <h1>WAITING FOR GAME</h1>
+    </div>
+
+    <div id="enemy-hp-container">
+      <div id="enemy-hp-bar" class="high-hp"></div>
+    </div>
+
+    <div id="player-hp-container">
+      <div id="player-hp-bar" class="high-hp"></div>
     </div>
 
     <div id="aim-game">
@@ -17,7 +26,6 @@
           <div id="opponent"></div>
         <div id="player "></div>
         </div>
-        
       </div>
     </div>
 
@@ -50,6 +58,7 @@
         >
       </div>
     </div>
+  </div>
     <script src="/socket.io/socket.io.js"></script>
     <script type="text/javascript" src="src/client.js"></script>
   </body>
