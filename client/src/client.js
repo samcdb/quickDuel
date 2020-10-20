@@ -1,5 +1,7 @@
 //const { emit } = require("process");
 
+//const { Socket } = require("dgram");
+
 const createTicTacToe = () => {
   let tiles;
 
@@ -122,8 +124,8 @@ const log = (text) => {
     }
   });
 
-  sock.on("turnUpdate0X", ({ isTurn, time }) => {
-    if (isTurn) {
+  sock.on("turnUpdate0X", ({ turnNow, time }) => {
+    if (turnNow === sock.id) {
       document.getElementById("timer").style.display = "block";
       document.getElementById("seconds").textContent = Math.floor(time / 1000);
       document.getElementById("ms").textContent = (time % 1000) / 10;
@@ -159,18 +161,12 @@ const log = (text) => {
     aimBtn.style.height = btnWidth + "px";
     aimBtn.style.left = coords[0] + "px";
     aimBtn.style.top =  coords[1] + "px";
-    if (attacking) {
+    if (attacking === sock.id) {
       aimBtn.style.backgroundColor = "green";
     } else {
       aimBtn.style.backgroundColor = "blue";
     }
     aimBtn.style.display = "block";
-
-    if (attacking) {
-      console.log("attack");
-    } else {
-      console.log("defend");
-    }
     //start recording time
     //place button
     stopWatch();
@@ -199,7 +195,7 @@ const log = (text) => {
   aimBtn.addEventListener("click", () => {
     let timeTaken = stopWatch();
     aimBtn.style.display = "none";
-    sock.emit("aimClick", {timeTaken, playerID, gameID});
+    sock.emit("aimClick", {timeTaken, gameID});
   });
   document
     .querySelector("#chat-form")

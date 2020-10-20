@@ -5,12 +5,13 @@ const Player = require("./Player");
 class Game {
   constructor(player1, player2) {
     this.players = [new Player(player1, 100), new Player(player2, 100)];
-    this.gameID = player1.id + player2.id + Math.floor(Math.random() * 3000); //find a better way to make unique id
-    this.lastPlayer = player1.id;
+    this.gameID = player1 + player2 + Math.floor(Math.random() * 3000); //find a better way to make unique id
+    this.lastPlayer = player1;
     this.timeLeft = 0;
     this.timeInterval;
     this.playersReady = 0;
     this.roundCount = 0;
+    this.turnTime = 2000;
     // aimgame only
     this.aimBtnWidth;
     this.coordArr = [];
@@ -18,64 +19,6 @@ class Game {
     this.testCount = 0;
   }
 
-  updateHealth(playerNum, hpChange) {
-    let player = this.players[playerNum];
-    player.health += hpChange;
-    
-    this.players[0].conn.emit("updateHealth", {id: player.id, hp: player.health}); 
-    this.players[1].conn.emit("updateHealth", {id: player.id, hp: player.health}); 
-
-    if (player.isDead()) {
-      this.gameOver();
-    }
-
-  }
-
-  gameOver() {
-    console.log("game over");
-  }
-  
-  whoseTurn() {
-    return this.players[0].id === this.lastPlayer
-      ? this.players[1].id
-      : this.players[0].id;
-  }
-  setTime(turnTime) {
-    this.timeLeft = turnTime;
-  }
-
-  // ############################ NOUGHTS AND CROSSES ############################
-  update0XDuel(timeStep) {
-    let turnNow = this.lastPlayer === this.players[0].id ? 1 : 0;
-    let notNow = this.lastPlayer === this.players[0].id ? 0 : 1;
-    this.setTime(2000);
-
-    this.timeInterval = setInterval(
-      function () {
-        this.players[turnNow].conn.emit("turnUpdate0X", {
-          isTurn: true,
-          time: this.timeLeft,
-        }); //show timer
-
-        this.players[notNow].conn.emit("turnUpdate0X", {
-          isTurn: false,
-          time: this.timeLeft,
-        }); //don't show timer
-
-        this.timeLeft -= timeStep;
-
-        if (this.timeLeft <= 0) {
-          clearInterval(this.timeInterval);
-          this.players[0].conn.emit("gameUpdate", this.lastPlayer); //change
-          this.players[1].conn.emit("gameUpdate", this.lastPlayer); //change
-          this.lastPlayer = this.players[turnNow];
-        }
-        console.log("time left: " + this.timeLeft);
-      }.bind(this),
-      timeStep
-    );
-  }
-  // ############################## aim game ######################
   createAimDuel(numTurns, btnWidth, courtWidth, courtHeight) {
     for(let i = 0; i < numTurns; i++) {
       this.aimBtnWidth = btnWidth;
@@ -85,48 +28,20 @@ class Game {
     }
   }
 
-  updateAimDuel() {
-    this.reactionArr = [];
-    console.log("player 1 health: " + this.players[0].health);
-    console.log("player 2 health: " + this.players[1].health);
-    if (this.coordArr.length === 0) {
-      console.log("aim duel over");
-      this.roundCount++;
-      // need to randomise next game
-      let fromMode = "aim-game"       // implement this.currentMode
-      let toMode = "tictac-game"
-      this.players[0].conn.emit("startNextMode", {fromMode, toMode}); //change
-      this.players[1].conn.emit("startNextMode", {fromMode, toMode}); //change
-      return;
-    }
-     
-    let attacker = (this.lastPlayer === this.players[0].id) ? 1 : 0; 
-    let defender = (this.lastPlayer === this.players[0].id) ? 0 : 1;
-    let coords = this.coordArr.pop();
+  whoseTurn() {
+    return this.players[0].id === this.lastPlayer
+      ? this.players[1].id
+      : this.players[0].id;
+  }
 
-    this.players[attacker].conn.emit("turnUpdateAim", {
-      attacking: true,
-      coords: coords,
-      btnWidth: this.aimBtnWidth,
-    }); 
-
-    this.players[defender].conn.emit("turnUpdateAim", {
-      attacking: false,
-      coords: coords,
-      btnWidth: this.aimBtnWidth,
-    });
-
-    this.timeInterval = setTimeout(function() {
-      // case when only 1 player has clicked in time
-      if (this.reactionArr[0]) {
-        //attack success
-        this.updateHealth(defender, -10);
-      } 
+  updateHealth(playerNum, hpChange) {
+    let player = this.players[playerNum];
+    player.health += hpChange;
   
-      this.lastPlayer = this.players[attacker].id;
-      this.updateAimDuel();
-    }.bind(this), 5000);
-    
+    if (player.isDead()) {
+      console.log("game over");
+    }
+  
   }
 
 }

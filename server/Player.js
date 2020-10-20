@@ -1,6 +1,6 @@
-function Player(connectionInfo, health) {
-    this.conn = connectionInfo;
-    this.id = connectionInfo.id;
+function Player(id, health) {
+    
+    this.id = id;
     this.health = health;
 }
 

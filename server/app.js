@@ -8,17 +8,18 @@ const app = express();
 
 const clientPath = `${__dirname}/../client`;
 const port = 8080;
-const ip = "127.0.0.1";
-const gameArr = [];
 
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(clientPath));
+app.use(express.static(clientPath));  
+
 
 const server = http.createServer(app);
 const { makeMove, getBoard, clear } = createBoard();
 const io = socketio(server);
-
+const activeGames = {};
 console.log(`Serving static from ${clientPath}`);
+
+
 
 server.on("error", (err) => {
   console.error(err);
@@ -37,32 +38,31 @@ io.on("connection", (socket) => {
   socket.join(lobby);
   lookForGame(lobby);
   
-  const tileClick = ({ tileNum, playerID, gameID}) => {
-    // don't do anything if it is not this player's turn
-    let game = getGame(gameID);
-    if (game.whoseTurn() !== playerID) return;
+  const tileClick = ({ tileNum, gameID}) => {
+    // don't do anything if it is not game player's turn
+    let game = activeGames[gameID];
+    if (game.whoseTurn() !== socket.id) return;
     // compute move
     clearInterval(game.timeInterval);
-    const gameWon = makeMove(tileNum, playerID);
-    const currentPlayerID = playerID; //having naming issues with passing objects that have the same property names - fix this
+    const gameWon = makeMove(tileNum, socket.id);
     // emit move to both players
-    io.to(game.gameID).emit("tileClick", { tileNum, currentPlayerID });
+    io.to(game.gameID).emit("tileClick", { tileNum, currentPlayerID: socket.id});
 
     if (gameWon === true) {
       socket.emit("message", "NICE");
       io.to(game.gameID).emit("message", "TIC TAC TOE OVER");
-      io.to(game.gameID).emit("gameUpdate", playerID); //change
+      io.to(game.gameID).emit("gameUpdate", socket.id); //change
       return;
     }
 
-    game.lastPlayer = playerID;
-    game.update0XDuel(100);
+    game.lastPlayer = socket.id;
+    update0XDuel(game, 100);
   };
 
-  const aimClick = ({timeTaken, playerID, gameID}) => {
-    let game = getGame(gameID);
+  const aimClick = ({timeTaken, gameID}) => {
+    let game = activeGames[gameID];
 
-    if (game.whoseTurn() === playerID) {
+    if (game.whoseTurn() === socket.id) {
       game.reactionArr[0] = timeTaken;  //attacker
       //console.log("attacked");
     } else {
@@ -85,7 +85,7 @@ io.on("connection", (socket) => {
       }
 
       game.lastPlayer = game.players[attacker].id;
-      game.updateAimDuel();
+      updateAimDuel(game);
     }
   };
 
@@ -93,7 +93,7 @@ io.on("connection", (socket) => {
   socket.on("tileClick", tileClick);
   socket.on("aimClick", aimClick);
   socket.on("foundGame", (gameID) => {
-    let game = getGame(gameID);
+    let game = activeGames[gameID];
     game.playersReady++;
     
     if (game.playersReady === 2) {
@@ -102,19 +102,19 @@ io.on("connection", (socket) => {
     }
   });
   socket.on("startNextMode", (gameID) => {
-    let game = getGame(gameID);
+    let game = activeGames[gameID];
     game.playersReady++;
 
     if (game.playersReady === 2) {
       if (game.roundCount % 2 === 0){
         console.log("starting aim game");
         game.playersReady = 0;
-        game.createAimDuel(100, 40, 900, 804); 
-        game.updateAimDuel();
+        game.createAimDuel(1, 40, 900, 804); 
+        updateAimDuel(game);
       } else {
         console.log('Starting 0 X');
         game.playersReady = 0;
-        game.update0XDuel(100);
+        update0XDuel(game, 100);
       }
     }
 
@@ -145,14 +145,15 @@ function lookForGame(lobby) {
     players[0].leave(lobby);
     players[1].leave(lobby);
 
-    let newGame = new Game(players[0], players[1]);
+    let newGame = new Game(players[0].id, players[1].id);
     players[0].join(newGame.gameID);
     players[1].join(newGame.gameID);
-    gameArr.push(newGame);
+    activeGames[newGame.gameID] = newGame;
     //Once a game is found, send ID to players to send back to server
     console.log("found a game with id: " + newGame.gameID);
     io.to(newGame.gameID).emit('foundGame', newGame.gameID);
   }
+  
 }
 
 // start the game for the matched players
@@ -164,17 +165,78 @@ function startGame(game) {
   io.to(game.gameID).emit("startGame");
 }
 
-// finds the relevant game
-function getGame(gameID) {
-  let count = 0;
-  let game = gameArr[count];
-  while (game.gameID !== gameID) {
-    count++;
-    game = gameArr[count];
-  }
 
-  return game;
+// UPDATE HEALTH 
+//game.players[0].conn.emit("updateHealth", {id: player.id, hp: player.health}); 
+//game.players[1].conn.emit("updateHealth", {id: player.id, hp: player.health}); 
+
+// ############################ NOUGHTS AND CROSSES ############################
+function update0XDuel(game, timeStep) {
+  let turnNow = game.whoseTurn();
+  game.timeLeft = game.turnTime;  // ########################################
+
+  game.timeInterval = setInterval(
+    function () {
+
+      io.to(game.gameID).emit("turnUpdate0X", {
+        turnNow,
+        time: game.timeLeft,
+      });
+
+      game.timeLeft -= timeStep;
+
+      if (game.timeLeft < 0) {
+        clearInterval(game.timeInterval);
+        io.to(game.gameID).emit("gameUpdate", game.lastPlayer);
+        game.lastPlayer = game.players[turnNow];  // ??????????????/
+        clear();  //clear board
+      }
+      console.log("time left: " + game.timeLeft);
+    },
+    timeStep
+  );
 }
+// ############################## aim game ######################
+
+
+function updateAimDuel(game) {
+  game.reactionArr = [];
+  console.log("player 1 health: " + game.players[0].health);
+  console.log("player 2 health: " + game.players[1].health);
+  if (game.coordArr.length === 0) {
+    console.log("aim duel over");
+    game.roundCount++;
+    // need to randomise next game
+    let fromMode = "aim-game";       // implement game.currentMode
+    let toMode = "tictac-game";
+    io.to(game.gameID).emit("startNextMode", {fromMode, toMode});
+    return;
+  }
+   
+  let attacker = (game.lastPlayer === game.players[0].id) ? 1 : 0; 
+  let defender = (game.lastPlayer === game.players[0].id) ? 0 : 1;
+  let coords = game.coordArr.pop();
+
+  io.to(game.gameID).emit("turnUpdateAim", {
+    attacking: game.players[attacker].id,
+    coords: coords,
+    btnWidth: game.aimBtnWidth,
+  }); 
+
+  game.timeInterval = setTimeout(function() {
+    // case when only 1 player has clicked in time
+    if (game.reactionArr[0]) {
+      //attack success
+      game.updateHealth(defender, -10);
+    } 
+
+    game.lastPlayer = game.players[attacker].id;
+    updateAimDuel(game);
+  }, 2000);
+  
+}
+
+// finds the relevant game
 
 // emit turnUpdate, true/false
 // on true, display timer on client side
