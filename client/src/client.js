@@ -7,6 +7,9 @@ const createTicTacToe = () => {
 
   const initBoard = () => {
     tiles = document.querySelectorAll(".tile");
+    for (tile of tiles) {
+      tile.className = "tile";
+    }
     return tiles;
   };
 
@@ -79,8 +82,8 @@ const log = (text) => {
   let gameID;
   const { initBoard, goodGame } = createTicTacToe();
   const {initAimCourt, stopWatch} = createAimGame();
-  const tiles = initBoard();
-  const aimBtn = initAimCourt();
+  let tiles = initBoard();
+  let aimBtn = initAimCourt();
 
   sock.on("message", log);
 
@@ -110,6 +113,7 @@ const log = (text) => {
     } else {
       goodGame(false);
     }
+    tiles = initBoard();
   });
 
   sock.on("updateHealth", ({id, hp}) => {
@@ -188,6 +192,7 @@ const log = (text) => {
       const tileNum = i;
       //display to user that tile was clicked and change tileTable accordingly
       sock.emit("tileClick", { tileNum, playerID, gameID});
+      
     });
   }
 

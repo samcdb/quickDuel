@@ -1,9 +1,9 @@
 .tile {
   width: 30%;
-  background: orange;
   padding-bottom: 30%;
   float: left;
   margin: 1.66%;
+  background: orange;
 }
 
 .tile-clicked {
@@ -81,10 +81,12 @@
   max-height: 900px;
   border: 5px solid black;
   margin: 10px auto;
+  position: relative;
 }
 
 #active-area {
   position: relative;
+  top: 50px;
   border: 2px dashed black;
   min-height: 800px;
   max-height: 800px;
@@ -118,17 +120,20 @@
 
 #opponent,
 #player {
+  border: 2px solid black;
   position: relative;
   width: 40px;
+  height: 40px;
   border-radius: 50%;
   background-color: yellow;
 }
 
 #opponent {
-  top: 100%;
+  top: 0%;
 }
 
 #player {
+  top: 100%;
 }
 
 .friendly {

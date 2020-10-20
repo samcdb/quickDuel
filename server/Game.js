@@ -1,6 +1,7 @@
 //const { seq } = require("async");
 //const { SSL_OP_NO_QUERY_MTU } = require("constants");
 const Player = require("./Player");
+const createBoard = require("./create-board");
 
 class Game {
   constructor(player1, player2) {
@@ -17,7 +18,13 @@ class Game {
     this.coordArr = [];
     this.reactionArr = [];  // first is attack, second is defend
     this.testCount = 0;
+    // noughts and crosses object - uses closures to keep track of board
+    this.board = createBoard();
+    {}
   }
+
+  // ################################# NOUGHTS AND CROSSES #######################################
+
 
   createAimDuel(numTurns, btnWidth, courtWidth, courtHeight) {
     for(let i = 0; i < numTurns; i++) {

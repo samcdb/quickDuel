@@ -1,12 +1,20 @@
 const createBoard = () => {
   // two-dimensional array filled with nulls
   let board;
-
+  
   const clear = () => {
     board = Array(3)
       .fill()
       .map(() => Array(3).fill(null));
   };
+
+  const alreadyClicked = (tileNum) => {
+    let y = Math.floor(tileNum / 3);
+    let x = tileNum % 3;
+
+    if (board[y][x]) return true;
+    return false;
+  }
 
   const inBounds = (x, y) => {
     return y >= 0 && y < board.length && x >= 0 && x < board[y].length;
@@ -41,10 +49,13 @@ const createBoard = () => {
   };
 
   const makeMove = (tileNum, playerID) => {
+
     let y = Math.floor(tileNum / 3);
     let x = tileNum % 3;
 
-    board[Math.floor(tileNum / 3)][tileNum % 3] = playerID;
+    if (board[y][x]) return -1;
+
+    board[y][x] = playerID;
     return isWinningMove(x, y);
   };
 
@@ -55,6 +66,7 @@ const createBoard = () => {
     makeMove,
     getBoard,
     clear,
+    alreadyClicked
   };
 };
 

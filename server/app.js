@@ -2,7 +2,6 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const http = require("http");
 const socketio = require("socket.io");
-const createBoard = require("./create-board");
 const Game = require("./Game");
 const app = express();
 
@@ -14,11 +13,9 @@ app.use(express.static(clientPath));
 
 
 const server = http.createServer(app);
-const { makeMove, getBoard, clear } = createBoard();
 const io = socketio(server);
 const activeGames = {};
 console.log(`Serving static from ${clientPath}`);
-
 
 
 server.on("error", (err) => {
@@ -41,10 +38,12 @@ io.on("connection", (socket) => {
   const tileClick = ({ tileNum, gameID}) => {
     // don't do anything if it is not game player's turn
     let game = activeGames[gameID];
+    if(game.board.alreadyClicked()) return;
     if (game.whoseTurn() !== socket.id) return;
     // compute move
     clearInterval(game.timeInterval);
-    const gameWon = makeMove(tileNum, socket.id);
+    const gameWon = game.board.makeMove(tileNum, socket.id);
+    if (gameWon === -1) return;
     // emit move to both players
     io.to(game.gameID).emit("tileClick", { tileNum, currentPlayerID: socket.id});
 
@@ -109,7 +108,7 @@ io.on("connection", (socket) => {
       if (game.roundCount % 2 === 0){
         console.log("starting aim game");
         game.playersReady = 0;
-        game.createAimDuel(1, 40, 900, 804); 
+        game.createAimDuel(3, 40, 900, 804); 
         updateAimDuel(game);
       } else {
         console.log('Starting 0 X');
@@ -189,7 +188,7 @@ function update0XDuel(game, timeStep) {
         clearInterval(game.timeInterval);
         io.to(game.gameID).emit("gameUpdate", game.lastPlayer);
         game.lastPlayer = game.players[turnNow];  // ??????????????/
-        clear();  //clear board
+        game.board.clear();  //clear board
       }
       console.log("time left: " + game.timeLeft);
     },
