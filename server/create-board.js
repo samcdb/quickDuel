@@ -11,7 +11,7 @@ const createBoard = () => {
   const alreadyClicked = (tileNum) => {
     let y = Math.floor(tileNum / 3);
     let x = tileNum % 3;
-
+    
     if (board[y][x]) return true;
     return false;
   }
@@ -53,10 +53,17 @@ const createBoard = () => {
     let y = Math.floor(tileNum / 3);
     let x = tileNum % 3;
 
-    if (board[y][x]) return -1;
-
     board[y][x] = playerID;
     return isWinningMove(x, y);
+  };
+
+  const isDraw = () => {
+    for (row of board) {
+      if (!(row[0] && row[1] && row[2])) {
+        return false;
+      }
+    }
+    return true;
   };
 
   const getBoard = () => board;
@@ -66,7 +73,8 @@ const createBoard = () => {
     makeMove,
     getBoard,
     clear,
-    alreadyClicked
+    alreadyClicked,
+    isDraw
   };
 };
 

@@ -38,12 +38,11 @@ io.on("connection", (socket) => {
   const tileClick = ({ tileNum, gameID}) => {
     // don't do anything if it is not game player's turn
     let game = activeGames[gameID];
-    if(game.board.alreadyClicked()) return;
-    if (game.whoseTurn() !== socket.id) return;
+    if(game.board.alreadyClicked(tileNum)) return;
+    if (game.currentPlayer !== socket.id) return;
     // compute move
     clearInterval(game.timeInterval);
     const gameWon = game.board.makeMove(tileNum, socket.id);
-    if (gameWon === -1) return;
     // emit move to both players
     io.to(game.gameID).emit("tileClick", { tileNum, currentPlayerID: socket.id});
 
@@ -52,38 +51,36 @@ io.on("connection", (socket) => {
       io.to(game.gameID).emit("message", "TIC TAC TOE OVER");
       io.to(game.gameID).emit("gameUpdate", socket.id); //change
       return;
+    } else if (game.board.isDraw()) {
+      console.log(game.board.isDraw());
+      io.to(game.gameID).emit("game0XDraw", socket.id); //change
+      return;
     }
 
-    game.lastPlayer = socket.id;
+    game.updateTurns();
     update0XDuel(game, 100);
   };
 
   const aimClick = ({timeTaken, gameID}) => {
     let game = activeGames[gameID];
 
-    if (game.whoseTurn() === socket.id) {
-      game.reactionArr[0] = timeTaken;  //attacker
-      //console.log("attacked");
+    if (game.currentPlayer === socket.id) {
+      game.aimDuel.setAtkReaction(timeTaken);  //attacker
     } else {
-      game.reactionArr[1] = timeTaken;  //defender
-     // console.log("defended");
+      game.aimDuel.setDefReaction(timeTaken);  //defender
     }
 
-    if (game.reactionArr[0] && game.reactionArr[1]) {     // CANNOT END TURN AFTER RECEIVING FIRST CLICK IN CASE OF LATENCY
+    if (game.aimDuel.bothClicked()) {     // CANNOT END TURN AFTER RECEIVING FIRST CLICK IN CASE OF LATENCY
       console.log("both clicked");
       clearInterval(game.timeInterval);
-      let attacker = (game.lastPlayer === game.players[0].id) ? 1 : 0;
-      let defender = (game.lastPlayer === game.players[0].id) ? 0 : 1;
-      let attackSuccess = game.reactionArr[0] < game.reactionArr[1];
      
-      if (attackSuccess) {
+      if (game.aimDuel.attackSuccess()) {
         // decrease health bar
-        console.log("BOTH HAVE CLICKED");
-        game.updateHealth(defender, -10);
+        game.updateHealth(game.lastPlayer, -10);
        // game.attackAnimation(attacker, "aim");
       }
 
-      game.lastPlayer = game.players[attacker].id;
+      game.updateTurns();
       updateAimDuel(game);
     }
   };
@@ -97,7 +94,7 @@ io.on("connection", (socket) => {
     
     if (game.playersReady === 2) {
       game.playersReady = 0;
-      startGame(game);
+      io.to(game.gameID).emit("startGame");
     }
   });
   socket.on("startNextMode", (gameID) => {
@@ -108,7 +105,11 @@ io.on("connection", (socket) => {
       if (game.roundCount % 2 === 0){
         console.log("starting aim game");
         game.playersReady = 0;
-        game.createAimDuel(3, 40, 900, 804); 
+
+        let numTurns = 10 + Math.floor(Math.random() * 10);
+        if (numTurns % 2 === 1) numTurns++;
+        game.aimDuel.initAimDuel(10, 40, 900, 804); 
+        
         updateAimDuel(game);
       } else {
         console.log('Starting 0 X');
@@ -155,15 +156,6 @@ function lookForGame(lobby) {
   
 }
 
-// start the game for the matched players
-function startGame(game) {
-  
-  let secondTurn = Math.floor(Math.random() * 2);
-  game.lastPlayer = game.players[secondTurn].id;
-  //set up both players
-  io.to(game.gameID).emit("startGame");
-}
-
 
 // UPDATE HEALTH 
 //game.players[0].conn.emit("updateHealth", {id: player.id, hp: player.health}); 
@@ -171,14 +163,13 @@ function startGame(game) {
 
 // ############################ NOUGHTS AND CROSSES ############################
 function update0XDuel(game, timeStep) {
-  let turnNow = game.whoseTurn();
   game.timeLeft = game.turnTime;  // ########################################
 
   game.timeInterval = setInterval(
     function () {
 
       io.to(game.gameID).emit("turnUpdate0X", {
-        turnNow,
+        turnNow: game.currentPlayer,
         time: game.timeLeft,
       });
 
@@ -187,7 +178,7 @@ function update0XDuel(game, timeStep) {
       if (game.timeLeft < 0) {
         clearInterval(game.timeInterval);
         io.to(game.gameID).emit("gameUpdate", game.lastPlayer);
-        game.lastPlayer = game.players[turnNow];  // ??????????????/
+        game.updateTurns();  // ??????????????/
         game.board.clear();  //clear board
       }
       console.log("time left: " + game.timeLeft);
@@ -199,10 +190,11 @@ function update0XDuel(game, timeStep) {
 
 
 function updateAimDuel(game) {
-  game.reactionArr = [];
-  console.log("player 1 health: " + game.players[0].health);
-  console.log("player 2 health: " + game.players[1].health);
-  if (game.coordArr.length === 0) {
+  console.log(game.players[game.lastPlayer].health);
+  console.log(game.players[game.currentPlayer].health);
+  game.aimDuel.resetReactions();
+
+  if (game.aimDuel.duelOver()) {
     console.log("aim duel over");
     game.roundCount++;
     // need to randomise next game
@@ -212,24 +204,21 @@ function updateAimDuel(game) {
     return;
   }
    
-  let attacker = (game.lastPlayer === game.players[0].id) ? 1 : 0; 
-  let defender = (game.lastPlayer === game.players[0].id) ? 0 : 1;
-  let coords = game.coordArr.pop();
-
+  let coords = game.aimDuel.getCoords();
   io.to(game.gameID).emit("turnUpdateAim", {
-    attacking: game.players[attacker].id,
+    attacking: game.currentPlayer,
     coords: coords,
-    btnWidth: game.aimBtnWidth,
+    btnWidth: game.aimDuel.getAimBtnWidth(),
   }); 
 
   game.timeInterval = setTimeout(function() {
-    // case when only 1 player has clicked in time
-    if (game.reactionArr[0]) {
+    // will only reach this point if only 1 player has clicked in time
+    if (game.aimDuel.getAtkReaction()) {
       //attack success
-      game.updateHealth(defender, -10);
+      game.updateHealth(game.lastPlayer, -10);
     } 
 
-    game.lastPlayer = game.players[attacker].id;
+    game.updateTurns();
     updateAimDuel(game);
   }, 2000);
   

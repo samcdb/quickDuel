@@ -13,13 +13,15 @@ const createTicTacToe = () => {
     return tiles;
   };
 
-  function goodGame(win) {
+  function goodGame(endState) {
     let resultClass;
 
-    if (win === true) {
+    if (endState === "win") {
       resultClass = "winner-pov";
-    } else {
+    } else if (endState === "loss"){
       resultClass = "loser-pov";
+    } else {
+      resultClass = "draw-pov";
     }
     gameOverFlash(resultClass, 3);
   }
@@ -109,10 +111,15 @@ const log = (text) => {
 
   sock.on("gameUpdate", (moveID) => {
     if (playerID === moveID) {
-      goodGame(true);
+      goodGame("win");
     } else {
-      goodGame(false);
+      goodGame("loss");
     }
+    tiles = initBoard();
+  });
+
+  sock.on("game0XDraw", () => {
+    goodGame(); // not a win or a loss
     tiles = initBoard();
   });
 
