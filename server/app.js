@@ -26,6 +26,8 @@ server.listen(port, () => {
   console.log("server launched");
 });
 
+// socket connects => lookforgame => app emits foundGame => client onfoundgame emits startnextmode => app starts next mode => 
+
 io.on("connection", (socket) => {
   const lobby = "lobby";
   socket.emit("sessionInit", socket.id);
@@ -34,6 +36,25 @@ io.on("connection", (socket) => {
 
   socket.join(lobby);
   lookForGame(lobby);
+
+  const reactClick = ({timeTaken, gameID}) => {
+    let game = activeGames[gameID];
+    if(!game.reactDuel.isClickAllowed()|| game.reactDuel.alreadyClicked(socket.id)) return;
+
+    game.playersReady++;
+    game.reactDuel.setPlayerTime(socket.id, timeTaken);
+    game.reactDuel.setAllowClick(false);
+
+    if (game.playersReady === 2){
+      clearInterval(game.timeInterval);
+
+      let winningPlayer = game.reactDuel.getWinner();
+      game.currentplayer = winningPlayer;
+      game.lastPlayer = Object.keys(game.players)[0] === game.currentPlayer ? Object.keys(game.players)[1] : Object.keys(game.players)[0];
+
+      io.to(game.gameID).emit("gameReactOver", winningPlayer);
+    }
+  };
   
   const tileClick = ({ tileNum, gameID}) => {
     // don't do anything if it is not game player's turn
@@ -47,13 +68,15 @@ io.on("connection", (socket) => {
     io.to(game.gameID).emit("tileClick", { tileNum, currentPlayerID: socket.id});
 
     if (gameWon === true) {
+      updateHealth(game, game.currentPlayer, 20);
       socket.emit("message", "NICE");
-      io.to(game.gameID).emit("message", "TIC TAC TOE OVER");
-      io.to(game.gameID).emit("gameUpdate", socket.id); //change
+      game.roundCount++;
+      io.to(game.gameID).emit("game0Xover", socket.id); //change
       return;
-    } else if (game.board.isDraw()) {
+    }
+     else if (game.board.isDraw()) {
       console.log(game.board.isDraw());
-      io.to(game.gameID).emit("game0XDraw", socket.id); //change
+      io.to(game.gameID).emit("game0Xover", null); //change
       return;
     }
 
@@ -76,7 +99,7 @@ io.on("connection", (socket) => {
      
       if (game.aimDuel.attackSuccess()) {
         // decrease health bar
-        game.updateHealth(game.lastPlayer, -10);
+        updateHealth(game, game.lastPlayer, -10);
        // game.attackAnimation(attacker, "aim");
       }
 
@@ -88,42 +111,20 @@ io.on("connection", (socket) => {
   socket.on("message", (text) => io.emit("message", text));
   socket.on("tileClick", tileClick);
   socket.on("aimClick", aimClick);
-  socket.on("foundGame", (gameID) => {
+  socket.on("reactClick", reactClick);
+  socket.on("startNextMode", (gameID) => {
     let game = activeGames[gameID];
     game.playersReady++;
     
     if (game.playersReady === 2) {
-      game.playersReady = 0;
-      io.to(game.gameID).emit("startGame");
+      startNextMode(game);
     }
   });
-  socket.on("startNextMode", (gameID) => {
-    let game = activeGames[gameID];
-    game.playersReady++;
-
-    if (game.playersReady === 2) {
-      if (game.roundCount % 2 === 0){
-        console.log("starting aim game");
-        game.playersReady = 0;
-
-        let numTurns = 10 + Math.floor(Math.random() * 10);
-        if (numTurns % 2 === 1) numTurns++;
-        game.aimDuel.initAimDuel(10, 40, 900, 804); 
-        
-        updateAimDuel(game);
-      } else {
-        console.log('Starting 0 X');
-        game.playersReady = 0;
-        update0XDuel(game, 100);
-      }
-    }
-
-  })
 
 });
 
 // get move from player - (tile, id)
-// io.emit  (tile, id, win)
+// io.emit  (tile, id, win)              
 
 //  client: own id message makes tile green, other makes red, same with win basically
 
@@ -149,19 +150,31 @@ function lookForGame(lobby) {
     players[0].join(newGame.gameID);
     players[1].join(newGame.gameID);
     activeGames[newGame.gameID] = newGame;
-    //Once a game is found, send ID to players to send back to server
+    
     console.log("found a game with id: " + newGame.gameID);
     io.to(newGame.gameID).emit('foundGame', newGame.gameID);
   }
   
 }
 
+function updateReactDuel(game) {
+  game.timeInterval = setTimeout(() => {           
+    io.to(game.gameID).emit("turnUpdateReact");
+    game.reactDuel.setAllowClick(true);
 
-// UPDATE HEALTH 
-//game.players[0].conn.emit("updateHealth", {id: player.id, hp: player.health}); 
-//game.players[1].conn.emit("updateHealth", {id: player.id, hp: player.health}); 
+    game.timeInterval = setTimeout(() => {
+      let winningPlayer = game.reactDuel.getWinner();
+      console.log("winner: "+ winningPlayer);
+      game.currentPlayer = winningPlayer;
+      game.lastPlayer = Object.keys(game.players)[0] === game.currentPlayer ? Object.keys(game.players)[1] : Object.keys(game.players)[0];
+      
+      console.log("current: " + game.currentPlayer);
+      console.log(game.lastPlayer);
+      io.to(game.gameID).emit("gameReactOver", winningPlayer);
+    }, 2000);
+  }, game.reactDuel.createRandomTime());
+} 
 
-// ############################ NOUGHTS AND CROSSES ############################
 function update0XDuel(game, timeStep) {
   game.timeLeft = game.turnTime;  // ########################################
 
@@ -177,30 +190,26 @@ function update0XDuel(game, timeStep) {
 
       if (game.timeLeft < 0) {
         clearInterval(game.timeInterval);
-        io.to(game.gameID).emit("gameUpdate", game.lastPlayer);
+        updateHealth(game, game.lastPlayer, 20);
+        io.to(game.gameID).emit("game0Xover", game.lastPlayer);
         game.updateTurns();  // ??????????????/
         game.board.clear();  //clear board
+
+    return;
       }
       console.log("time left: " + game.timeLeft);
     },
     timeStep
   );
 }
-// ############################## aim game ######################
 
 
 function updateAimDuel(game) {
-  console.log(game.players[game.lastPlayer].health);
-  console.log(game.players[game.currentPlayer].health);
   game.aimDuel.resetReactions();
 
   if (game.aimDuel.duelOver()) {
     console.log("aim duel over");
-    game.roundCount++;
-    // need to randomise next game
-    let fromMode = "aim-game";       // implement game.currentMode
-    let toMode = "tictac-game";
-    io.to(game.gameID).emit("startNextMode", {fromMode, toMode});
+    startNextMode(game);
     return;
   }
    
@@ -215,13 +224,57 @@ function updateAimDuel(game) {
     // will only reach this point if only 1 player has clicked in time
     if (game.aimDuel.getAtkReaction()) {
       //attack success
-      game.updateHealth(game.lastPlayer, -10);
+      updateHealth(game, game.lastPlayer, -10);
     } 
 
     game.updateTurns();
     updateAimDuel(game);
-  }, 2000);
+  }, 1000);
   
+}
+
+function updateHealth(game, id, hpChange) {
+  console.log("we got here");
+  let player = game.players[id];
+  player.health += hpChange;
+  if (player.health <= 0) console.log("game over");
+  if (player.health > player.maxHealth) player.health = player.maxHealth;
+  io.to(game.gameID).emit("updateHealth", {id, hp: player.health});
+
+}
+
+function startNextMode(game) {
+  const fromMode = game.currentMode;       // implement game.currentMode
+  let toMode;
+  if (game.roundCount === -1) {
+    toMode = game.gameModes[1]  // game over
+  }
+  else if (game.roundCount === 0) {
+    toMode = game.gameModes[2]; // go from waiting screen to start-decider
+
+    updateReactDuel(game);
+  } 
+  else if (game.roundCount % 2 === 1) {
+    toMode = game.gameModes[3];  // go to aim-game
+
+    let numTurns = 10 + Math.floor(Math.random() * 10);
+    if (numTurns % 2 === 1) numTurns++; //make numTurns even
+
+    game.aimDuel.initAimDuel(numTurns, 40, 900, 804); 
+    updateAimDuel(game);
+  } 
+  else {
+    let randomMode = Math.floor(Math.random() * (game.gameModes.length - 4)); // CHANGE THIS WHEN MORE MODES ADDED
+    toMode = game.gameModes[4 + randomMode];
+    if (toMode === game.gameModes[4]) update0XDuel(game, 100);    // change this to switch maybe
+  }
+
+  console.log(`from: ${fromMode} to: ${toMode}`);
+
+  game.roundCount++;
+  game.currentMode = toMode;
+  game.playersReady = 0;
+  io.to(game.gameID).emit("startNextMode", {fromMode, toMode});
 }
 
 // finds the relevant game
