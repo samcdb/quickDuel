@@ -24,6 +24,8 @@ class Game {
     this.aimDuel = createAimDuel();
     // noughts and crosses object - uses closures to keep track of board
     this.board = createBoard();
+    // type duel game
+    this.typeDuel = createTypeDuel();
 
   }
 
