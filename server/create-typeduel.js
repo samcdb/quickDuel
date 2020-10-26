@@ -9,7 +9,10 @@ const createTypeDuel = (time) => {
     const getTime = () => allowedTime;
 
 
-
+    return {
+        randomSentence,
+        getTime,
+    };
 };
 
 module.exports = createTypeDuel;

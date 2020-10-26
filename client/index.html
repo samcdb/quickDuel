@@ -5,30 +5,40 @@
     <link rel="stylesheet" type="text/css" href="styles/style.css" />
   </head>
   <body>
-    <div id="body-wrapper">
+  
     <div id="game-container">
-    <div id="lobby-screen">
+    <div id="waiting-screen">
       <h1>WAITING FOR GAME</h1>
     </div>
-
-    <div id="enemy-hp-container">
-      <div id="enemy-hp-bar" class="high-hp"></div>
-    </div>
-
-    <div id="player-hp-container">
-      <div id="player-hp-bar" class="high-hp"></div>
+    <div id="start-decider">
+      <div id="reaction-block">
+        <div id="react-won-lost"></div>
+      </div>
     </div>
 
     <div id="aim-game">
+      <div id="health-container">
+      <div id="enemy-hp-container">
+        <div id="enemy-hp-bar" class="high-hp"></div>
+      </div>
+  
+      <div id="player-hp-container">
+        <div id="player-hp-bar" class="high-hp"></div>
+      </div>
+    </div>
       <div id="court">
         <div id="active-area">
-          <button id="action-btn" class="friendly"></button>
+          <button id="aim-btn"></button>
           <div id="enemy-btn" class="enemy"></div>
         </div>
         <div id="opponent"></div>
         <div id="player "></div>
       </div>
     </div>
+
+      <div id="typeduel-game">
+        <input type="text" id="type-bar" autofocus>
+      </div>
 
     <div id="tictac-game">
       <div class="tile"></div>
@@ -62,6 +72,5 @@
   </div>
     <script src="/socket.io/socket.io.js"></script>
     <script type="text/javascript" src="src/client.js"></script>
-  </div>
   </body>
 </html>

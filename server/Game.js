@@ -4,6 +4,7 @@ const Player = require("./Player");
 const createBoard = require("./create-board");
 const createAimDuel = require("./create-aimduel");
 const createReactDuel = require("./create-reactduel");
+const createTypeDuel = require("./create-typeduel");
 
 class Game {
   constructor(player1, player2) {

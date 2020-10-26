@@ -2,6 +2,8 @@
 
 //const { Socket } = require("dgram");
 
+//const { Socket } = require("dgram");
+
 const createTicTacToe = () => {
   let tiles;
 
@@ -13,50 +15,90 @@ const createTicTacToe = () => {
     return tiles;
   };
 
-  function goodGame(endState) {
+  function goodGame(player, winner, func) {
     let resultClass;
-
-    if (endState === "win") {
-      resultClass = "winner-pov";
-    } else if (endState === "loss"){
-      resultClass = "loser-pov";
-    } else {
+    if(!winner) {
       resultClass = "draw-pov";
     }
-    gameOverFlash(resultClass, 3);
+    else if (player === winner) {
+      resultClass = "winner-pov";
+    } 
+    else {
+      resultClass = "loser-pov";
+    }
+    gameOverFlash(resultClass, 3, func);
+
   }
 
-  function gameOverFlash(classToggle, count) {
+  function gameOverFlash(classToggle, count, callBackFunc) {
     setTimeout(function () {
       for (let i = 0; i < tiles.length; i++) {
         tiles[i].classList.toggle(classToggle);
       }
 
       if (count > 0) {
-        gameOverFlash(classToggle, count - 1);
+        gameOverFlash(classToggle, count - 1, callBackFunc);
+      } 
+      else {
+        callBackFunc();
       }
     }, 400);
+
   }
 
   return { initBoard, goodGame };
 }; 
 const createAimGame = () => {
-  let actionBtn;
+  let aimBtn;
+  let enemyBtn;
+  let activeArea;
   let stopWatchTime = 0;
-
+  
   const initAimCourt = () => {
-    actionBtn = document.querySelector('#action-btn');
-    return actionBtn;
+    activeArea = document.getElementById("active-area");
+    aimBtn = document.getElementById('aim-btn');
+    enemyBtn = document.getElementById('enemy-btn');
+
+    return {
+      aimBtn,
+      enemyBtn,
+      activeArea
+    };
   };
 
-  const stopWatch = () => {
+  const aimStopWatch = () => {
     let reactionTime = Date.now() - stopWatchTime; 
     stopWatchTime = Date.now();
     return reactionTime;
   };
 
-  return {initAimCourt, stopWatch};
+  return {initAimCourt, aimStopWatch};
 };
+
+const createReactGame = () => {
+  let reactBlock;
+  let reactText;
+  let stopWatchTime = 0;
+
+  const initReactGame = () => {
+    reactBlock = document.querySelector('#reaction-block');
+    reactText = document.querySelector('#react-won-lost');
+    return {
+      reactBlock,
+      reactText,
+    };
+  }
+  const reactStopWatch = () => {
+    let reactionTime = Date.now() - stopWatchTime; 
+    stopWatchTime = Date.now();
+    return reactionTime;
+  };
+
+  return {
+    initReactGame,
+    reactStopWatch,
+  };
+}
 
 const onChatSubmitted = (sock) => (e) => {
   e.preventDefault();
@@ -82,10 +124,14 @@ const log = (text) => {
   const sock = io();
   let playerID;
   let gameID;
+
   const { initBoard, goodGame } = createTicTacToe();
-  const {initAimCourt, stopWatch} = createAimGame();
+  const {initAimCourt, aimStopWatch} = createAimGame();
+  const {initReactGame, reactStopWatch} = createReactGame();
+
   let tiles = initBoard();
-  let aimBtn = initAimCourt();
+  let {aimBtn, enemyBtn, activeArea} = initAimCourt();
+  let {reactBlock, reactText} = initReactGame();
 
   sock.on("message", log);
 
@@ -95,45 +141,51 @@ const log = (text) => {
   });
 
   sock.on("foundGame", (receivedGameID) => {
+    console.log("received ID: " + receivedGameID);
     gameID = receivedGameID;
-    sock.emit("foundGame", gameID);
-  });
-
-  sock.on("startGame", () => {
-    console.log("players starting game");
-    //#################################
-    //change
-    document.getElementById("aim-game").style.display = "block";
-    document.getElementById("lobby-screen").style.display = "none";
-    console.log("I have the ID " + gameID);
     sock.emit("startNextMode", gameID);
-  }); 
-
-  sock.on("gameUpdate", (moveID) => {
-    if (playerID === moveID) {
-      goodGame("win");
-    } else {
-      goodGame("loss");
-    }
-    tiles = initBoard();
   });
 
-  sock.on("game0XDraw", () => {
-    goodGame(); // not a win or a loss
+  sock.on("game0Xover", (moveID) => {
+    // async function     
+    goodGame(playerID, moveID, () => {
+      sock.emit("startNextMode", gameID);
+    });
     tiles = initBoard();
+    
   });
+
 
   sock.on("updateHealth", ({id, hp}) => {
-    console.log("hi");
+    console.log(`updating player ${id} with health ${hp}`);
     let playerHealthBar = document.getElementById("player-hp-bar");
     let enemyHealthBar = document.getElementById("enemy-hp-bar");
-    console.log(hp);
-    if (playerID === id) {
-      playerHealthBar.height = hp + "%";
+    if (sock.id === id) {
+      playerHealthBar.style.height = hp + "%";
     } else {
-      enemyHealthBar.height = hp + "%";
+      enemyHealthBar.style.height = hp + "%";
     }
   });
+
+  sock.on("turnUpdateReact", () => {
+    reactBlock.style.backgroundColor = "yellow";
+    reactStopWatch(); 
+  });
+
+  sock.on("gameReactOver", (winningPlayer) => {
+    if (sock.id === winningPlayer) {
+      reactText.innerHTML = "WON"
+      reactBlock.style.backgroundColor = "green"
+    }
+    else {
+      reactText.innerHTML = "LOST";
+      reactBlock.style.backgroundColor = "red";
+    }
+
+    setTimeout(() => {
+      sock.emit("startNextMode", gameID);
+    }, 2000);
+  }); 
 
   sock.on("turnUpdate0X", ({ turnNow, time }) => {
     if (turnNow === sock.id) {
@@ -157,42 +209,37 @@ const log = (text) => {
   });
 
   sock.on("turnUpdateAim", ({attacking, coords, btnWidth}) => {
-    let activeArea = document.getElementById("active-area");
-    let areaWidth = activeArea.offsetWidth;
-    let areaHeight = activeArea.offsetHeight;
-    let enemyBtn = document.getElementById("enemy-btn");
+    aimBtn.style.display = "block";
+    enemyBtn.style.display = "block";
 
     enemyBtn.style.width = btnWidth + "px";
     enemyBtn.style.height = btnWidth + "px";
-    enemyBtn.style.left = areaWidth / 2 + (areaWidth / 2 - coords[0]) - btnWidth + "px";
-    enemyBtn.style.top =  areaHeight / 2 - (coords[1] - areaHeight / 2) + "px";
-    enemyBtn.style.display = "block";
+    enemyBtn.style.right = coords[0] + "px";
+    enemyBtn.style.bottom = coords[1] + "px";
 
     aimBtn.style.width = btnWidth + "px";
     aimBtn.style.height = btnWidth + "px";
     aimBtn.style.left = coords[0] + "px";
     aimBtn.style.top =  coords[1] + "px";
+
     if (attacking === sock.id) {
       aimBtn.style.backgroundColor = "green";
     } else {
       aimBtn.style.backgroundColor = "blue";
     }
-    aimBtn.style.display = "block";
     //start recording time
     //place button
-    stopWatch();
+    aimStopWatch();
   });
 
   sock.on("startNextMode", ({fromMode, toMode}) => {
     //transition
     console.log("starting next game mode");
-    //
-    console.log("transition from " + fromMode + " to " + toMode );
+    console.log(`from ${fromMode} to ${toMode}`);
     document.getElementById(fromMode).style.display = "none";
     document.getElementById(toMode).style.display = "block";
-
-    sock.emit("startNextMode", gameID);
   });
+
   for (let i = 0; i < tiles.length; i++) {
     tiles[i].addEventListener("click", () => {
       console.log(i);
@@ -205,9 +252,15 @@ const log = (text) => {
 
   // on click listener for aim game button
   aimBtn.addEventListener("click", () => {
-    let timeTaken = stopWatch();
+    let timeTaken = aimStopWatch();
     aimBtn.style.display = "none";
     sock.emit("aimClick", {timeTaken, gameID});
+  });
+
+  reactBlock.addEventListener("click", () => {
+    let timeTaken = reactStopWatch();
+    reactBlock.style.border = "2px solid black";
+    sock.emit("reactClick", {timeTaken, gameID})
   });
   document
     .querySelector("#chat-form")

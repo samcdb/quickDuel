@@ -61,19 +61,55 @@
   background-color: red;
 }
 
-#body-wrapper {
+#game-container {
   margin-left: auto;
   margin-right: auto;
-  width: 960px;
+  width: 1400px;
+}
+
+#start-decider {
+  display: none;
+}
+
+#reaction-block {
+  min-height: 300px;
+  min-width: 300px;
+  background: red;
+}
+
+#aim-game {
+  position: relative;
+  display: none;
+}
+
+#reaction-block {
+  position: relative;
+  width: 400px;
+  height: 400px;
+}
+
+#health-container {
+  position: absolute;
+  left: 0px;
+  height: 900px;
+  width: 100px;
 }
 
 #player-hp-container,
 #enemy-hp-container {
-  float: left;
+  margin: 2px;
   border: 2px solid black;
   height: 250px;
   width: 75px;
   position: relative;
+}
+
+#player-hp-container {
+  bottom: 0px;
+}
+
+#enemy-hp-container {
+  top: 0px;
 }
 
 #enemy-hp-bar,
@@ -82,10 +118,6 @@
   bottom: 0;
   height: 100%;
   width: 100%;
-}
-
-#aim-game {
-  display: none;
 }
 
 #court {
@@ -113,7 +145,14 @@
   display: none;
 }
 
-#lobby-screen {
+#typeduel-game {
+  display: none;
+}
+
+#type-bar {
+}
+
+#waiting-screen {
   display: block;
 }
 
@@ -126,7 +165,7 @@
   padding: 10px;
 }
 
-#action-btn,
+#aim-btn,
 #enemy-btn {
   position: absolute;
   display: none;
