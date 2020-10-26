@@ -8,10 +8,12 @@ const createTypeDuel = (time) => {
 
     const getTime = () => allowedTime;
 
+    const setTime = (time) => allowedTime = time;
 
     return {
         randomSentence,
         getTime,
+        setTime,
     };
 };
 

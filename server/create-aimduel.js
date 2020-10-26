@@ -2,9 +2,12 @@ const createAimDuel = () => {
     let aimBtnWidth;
     let coordArr;
     let reactionArr;  // first is attack, second is defend
+    let turnTime;
 
-    const initAimDuel = (numTurns, btnWidth, courtWidth, courtHeight) => {
+    const initAimDuel = (numTurns, btnWidth, courtWidth, courtHeight, time) => {
         coordArr = [];
+        turnTime = time;
+        
         for(let i = 0; i < numTurns; i++) {
           aimBtnWidth = btnWidth;
           let x = Math.floor(btnWidth + (Math.random() * (courtWidth - 2 * btnWidth)));
@@ -13,45 +16,28 @@ const createAimDuel = () => {
         }
     }
 
-    const getAimBtnWidth = () => {
-        return aimBtnWidth;
-    }
 
-    const resetReactions = () => {
-        reactionArr = [];
-    };
+    const getAimBtnWidth = () => aimBtnWidth;
 
-    const setAtkReaction = (reactionTime) => {
-        reactionArr[0] = reactionTime;
-    };
+    const getTurnTime = () => turnTime;
 
-    const setDefReaction = (reactionTime) => {
-        reactionArr[1] = reactionTime;
-    };
+    const resetReactions = () => reactionArr = [];
 
-    const getAtkReaction = () => {
-        return reactionArr[0];
-    };
+    const setAtkReaction = (reactionTime) => reactionArr[0] = reactionTime;
 
-    const getDefReaction = () => {
-        return reactionArr[1];
-    };
+    const setDefReaction = (reactionTime) => reactionArr[1] = reactionTime;
 
-    const bothClicked = () => {
-        return reactionArr[0] && reactionArr[1];
-    };
+    const getAtkReaction = () => reactionArr[0];
 
-    const attackSuccess = () => {
-        return reactionArr[0] < reactionArr[1];
-    };
+    const getDefReaction = () => reactionArr[1];
 
-    const getCoords = () => {
-        return coordArr.pop();
-    };
+    const bothClicked = () => reactionArr[0] && reactionArr[1];
 
-    const duelOver = () => {
-        return coordArr.length === 0;
-    };
+    const attackSuccess = () => reactionArr[0] < reactionArr[1];
+
+    const getCoords = () => coordArr.pop();
+
+    const duelOver = () => coordArr.length === 0;
 
     return {
         initAimDuel,
@@ -65,6 +51,7 @@ const createAimDuel = () => {
         duelOver,
         getCoords,
         getAimBtnWidth,
+        getTurnTime,
     };
 }
 

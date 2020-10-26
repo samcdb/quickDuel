@@ -1,6 +1,17 @@
-const createBoard = () => {
+const createBoard = (timeAllowed, timeStep) => {
   // two-dimensional array filled with nulls
   let board;
+  let turnTime = timeAllowed;
+  let dt = timeStep;
+  let timeLeft;
+
+  const resetTurnTime = () => timeLeft = turnTime;
+
+  const getTimeStep = () => dt;
+
+  const updateTimeLeft = () => timeLeft -= dt;
+
+  const getTimeLeft = () => timeLeft;
   
   const clear = () => {
     board = Array(3)
@@ -69,12 +80,17 @@ const createBoard = () => {
   const getBoard = () => board;
 
   clear();
+
   return {
     makeMove,
     getBoard,
     clear,
     alreadyClicked,
-    isDraw
+    isDraw,
+    resetTurnTime,
+    getTimeStep,
+    updateTimeLeft,
+    getTimeLeft,
   };
 };
 

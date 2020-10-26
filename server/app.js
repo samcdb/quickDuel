@@ -81,7 +81,7 @@ io.on("connection", (socket) => {
     }
 
     game.updateTurns();
-    update0XDuel(game, 100);
+    update0XDuel(game);
   };
 
   const aimClick = ({timeTaken, gameID}) => {
@@ -175,20 +175,22 @@ function updateReactDuel(game) {
   }, game.reactDuel.createRandomTime());
 } 
 
-function update0XDuel(game, timeStep) {
-  game.timeLeft = game.turnTime;  // ########################################
+function update0XDuel(game) {
+ // game.timeLeft = game.turnTime;  // ########################################   reset turntime
+  game.board.resetTurnTime();
 
   game.timeInterval = setInterval(
     function () {
 
       io.to(game.gameID).emit("turnUpdate0X", {
         turnNow: game.currentPlayer,
-        time: game.timeLeft,
+        time: game.board.getTimeLeft(),
       });
 
-      game.timeLeft -= timeStep;
+     // game.timeLeft -= timeStep;              // update turntime 
+     game.board.updateTimeLeft();
 
-      if (game.timeLeft < 0) {
+      if (game.board.getTimeLeft() < 0) {
         clearInterval(game.timeInterval);
         updateHealth(game, game.lastPlayer, 20);
         io.to(game.gameID).emit("game0Xover", game.lastPlayer);
@@ -197,9 +199,8 @@ function update0XDuel(game, timeStep) {
 
     return;
       }
-      console.log("time left: " + game.timeLeft);
     },
-    timeStep
+    game.board.getTimeStep()                 // timestep
   );
 }
 
@@ -229,9 +230,13 @@ function updateAimDuel(game) {
 
     game.updateTurns();
     updateAimDuel(game);
-  }, 1000);
+  }, game.aimDuel.getTurnTime());
   
-}
+};
+
+function updateTypeDuel(game) {
+
+};
 
 function updateHealth(game, id, hpChange) {
   console.log("we got here");
@@ -257,10 +262,10 @@ function startNextMode(game) {
   else if (game.roundCount % 2 === 1) {
     toMode = game.gameModes[3];  // go to aim-game
 
-    let numTurns = 10 + Math.floor(Math.random() * 10);
+    let numTurns = 4 + Math.floor(Math.random() * 10);
     if (numTurns % 2 === 1) numTurns++; //make numTurns even
 
-    game.aimDuel.initAimDuel(numTurns, 40, 900, 804); 
+    game.aimDuel.initAimDuel(numTurns, 40, 900, 804, 2000); 
     updateAimDuel(game);
   } 
   else {
