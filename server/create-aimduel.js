@@ -17,6 +17,8 @@ const createAimDuel = () => {
     }
 
 
+    // try get rid of the getters and setters / combine them into bigger functions
+
     const getAimBtnWidth = () => aimBtnWidth;
 
     const getTurnTime = () => turnTime;

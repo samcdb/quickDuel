@@ -61,6 +61,18 @@
   background-color: red;
 }
 
+.player-typed {
+  color: green;
+}
+
+.enemy-typed {
+  color: red;
+}
+
+.untyped {
+  color: gray;
+}
+
 #game-container {
   margin-left: auto;
   margin-right: auto;
@@ -145,11 +157,31 @@
   display: none;
 }
 
-#typeduel-game {
+#type-game {
+  position: relative;
   display: none;
+  margin: 0 auto;
+  width: 800px;
+  height: 800px;
+}
+
+#enemy-sentence,
+#player-sentence {
+  font-size: 50px;
+  position: absolute;
+}
+
+#enemy-sentence {
+  top: 10%;
+}
+
+#player-sentence {
+  bottom: 40%;
 }
 
 #type-bar {
+  position: absolute;
+  bottom: 10%;
 }
 
 #waiting-screen {

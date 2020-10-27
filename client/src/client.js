@@ -1,8 +1,3 @@
-//const { emit } = require("process");
-
-//const { Socket } = require("dgram");
-
-//const { Socket } = require("dgram");
 
 const createTicTacToe = () => {
   let tiles;
@@ -48,6 +43,7 @@ const createTicTacToe = () => {
 
   return { initBoard, goodGame };
 }; 
+
 const createAimGame = () => {
   let aimBtn;
   let enemyBtn;
@@ -81,8 +77,8 @@ const createReactGame = () => {
   let stopWatchTime = 0;
 
   const initReactGame = () => {
-    reactBlock = document.querySelector('#reaction-block');
-    reactText = document.querySelector('#react-won-lost');
+    reactBlock = document.getElementById('reaction-block');
+    reactText = document.getElementById('react-won-lost');
     return {
       reactBlock,
       reactText,
@@ -100,6 +96,61 @@ const createReactGame = () => {
   };
 }
 
+const createTypeGame = () => {
+  let playerSentence;
+  let enemySentence;
+
+  const initTypeGame = () => {
+    playerSentence = document.getElementById('player-sentence');
+    enemySentence = document.getElementById('enemy-sentence');
+    textBar = document.getElementById('type-bar');
+    
+    return {
+      playerSentence,
+      enemySentence,
+    };
+  };
+
+  const setSentences = (text) => {
+    console.log("the sentence is " + text);
+    text.split('').forEach((char) => {
+      playerSentence.innerHTML += `<span class="untyped player-typed">${char}</span>`;
+      enemySentence.innerHTML += `<span class="untyped enemy-typed">${char}</span>`;
+    });
+  };
+
+  const showProgress = (typedText, sentence) => {
+    let spanArr = sentence.getElementsByTagName('span');
+    let typedArr = typedText.split('');
+
+    for (let span of spanArr) {
+      span.classList.add("untyped");
+    }
+
+    for (let i = 0; i < typedArr.length; i++) {
+      console.log("checking if same");
+      if (typedArr[i] === spanArr[i].innerText) {
+        spanArr[i].classList.remove("untyped");
+      } else {
+        break;
+      }
+    }
+  };
+
+  const clearTypeGame = () => {
+    playerSentence.innerHTML = "";
+    enemySentence.innerHTML = "";
+    textBar.value = "";
+  };
+
+  return {
+    initTypeGame,
+    setSentences,
+    showProgress,
+    clearTypeGame,
+  }
+};
+
 const onChatSubmitted = (sock) => (e) => {
   e.preventDefault();
 
@@ -111,7 +162,6 @@ const onChatSubmitted = (sock) => (e) => {
 };
 
 const log = (text) => {
-  console.log("This is the text that was passed in: " + text);
   const parent = document.querySelector("#events");
   const el = document.createElement("li");
   el.innerHTML = text;
@@ -125,13 +175,15 @@ const log = (text) => {
   let playerID;
   let gameID;
 
-  const { initBoard, goodGame } = createTicTacToe();
+  const {initBoard, goodGame} = createTicTacToe();
   const {initAimCourt, aimStopWatch} = createAimGame();
   const {initReactGame, reactStopWatch} = createReactGame();
+  const {initTypeGame, setSentences, showProgress, clearTypeGame} = createTypeGame(); 
 
   let tiles = initBoard();
-  let {aimBtn, enemyBtn, activeArea} = initAimCourt();
+  let {aimBtn, enemyBtn} = initAimCourt();
   let {reactBlock, reactText} = initReactGame();
+  let {playerSentence, enemySentence} = initTypeGame();
 
   sock.on("message", log);
 
@@ -160,6 +212,7 @@ const log = (text) => {
     console.log(`updating player ${id} with health ${hp}`);
     let playerHealthBar = document.getElementById("player-hp-bar");
     let enemyHealthBar = document.getElementById("enemy-hp-bar");
+
     if (sock.id === id) {
       playerHealthBar.style.height = hp + "%";
     } else {
@@ -196,6 +249,25 @@ const log = (text) => {
       document.getElementById("timer").style.display = "none";
     }
   });
+
+  sock.on("startTypeDuel", (sentence) => {
+    setSentences(sentence);
+  });
+
+  sock.on("turnUpdateType", ({typedText, playerID}) => {
+    if (sock.id === playerID) {
+      showProgress(typedText, playerSentence);
+    } else {
+      showProgress(typedText, enemySentence);
+    }
+  });
+
+  sock.on("typeDuelOver", () => {
+    console.log("duel Over");
+    // do animation
+    clearTypeGame();
+    sock.emit("startNextMode", gameID);
+  })
 
   sock.on("tileClick", ({ tileNum, currentPlayerID}) => {
     console.log("client ID = " + playerID + " received = " + currentPlayerID);
@@ -242,7 +314,6 @@ const log = (text) => {
 
   for (let i = 0; i < tiles.length; i++) {
     tiles[i].addEventListener("click", () => {
-      console.log(i);
       const tileNum = i;
       //display to user that tile was clicked and change tileTable accordingly
       sock.emit("tileClick", { tileNum, playerID, gameID});
@@ -262,9 +333,17 @@ const log = (text) => {
     reactBlock.style.border = "2px solid black";
     sock.emit("reactClick", {timeTaken, gameID})
   });
+
+  textBar.addEventListener('input', (e) => {
+    let typedText = e.target.value;
+    sock.emit("textInput", {typedText, gameID});
+  });
+
   document
     .querySelector("#chat-form")
     .addEventListener("submit", onChatSubmitted(sock));
+
+  
 })();
 
 //###################################################################### AIM ######################################################################

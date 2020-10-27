@@ -15,6 +15,11 @@ app.use(express.static(clientPath));
 const server = http.createServer(app);
 const io = socketio(server);
 const activeGames = {};
+const sentenceBank = [
+  "please type this sentence ok nice",
+  "here is another sentence please type",
+  "by all that is holy I summon fishmoly"
+];
 console.log(`Serving static from ${clientPath}`);
 
 
@@ -108,10 +113,16 @@ io.on("connection", (socket) => {
     }
   };
 
+  const textInput = ({typedText, gameID}) => {
+    let game = activeGames[gameID];
+    updateTypeDuel(typedText, socket.id, game);
+  };
+
   socket.on("message", (text) => io.emit("message", text));
   socket.on("tileClick", tileClick);
   socket.on("aimClick", aimClick);
   socket.on("reactClick", reactClick);
+  socket.on("textInput", textInput);
   socket.on("startNextMode", (gameID) => {
     let game = activeGames[gameID];
     game.playersReady++;
@@ -175,32 +186,26 @@ function updateReactDuel(game) {
   }, game.reactDuel.createRandomTime());
 } 
 
-function update0XDuel(game) {
- // game.timeLeft = game.turnTime;  // ########################################   reset turntime
-  game.board.resetTurnTime();
+function update0XDuel(game) { 
+   game.board.resetTurnTime();
 
-  game.timeInterval = setInterval(
-    function () {
-
+  game.timeInterval = setInterval(() => {
       io.to(game.gameID).emit("turnUpdate0X", {
         turnNow: game.currentPlayer,
         time: game.board.getTimeLeft(),
       });
 
-     // game.timeLeft -= timeStep;              // update turntime 
      game.board.updateTimeLeft();
 
       if (game.board.getTimeLeft() < 0) {
-        clearInterval(game.timeInterval);
+        clearInterval(game.timeInterval); 
         updateHealth(game, game.lastPlayer, 20);
         io.to(game.gameID).emit("game0Xover", game.lastPlayer);
-        game.updateTurns();  // ??????????????/
-        game.board.clear();  //clear board
-
-    return;
+        game.updateTurns();  
+        game.board.clear();
       }
     },
-    game.board.getTimeStep()                 // timestep
+    game.board.getTimeStep()                 
   );
 }
 
@@ -231,15 +236,28 @@ function updateAimDuel(game) {
     game.updateTurns();
     updateAimDuel(game);
   }, game.aimDuel.getTurnTime());
-  
 };
 
-function updateTypeDuel(game) {
+function startTypeDuel(game) {
+  io.to(game.gameID).emit("startTypeDuel", game.typeDuel.randomSentence(sentenceBank))
+  game.timeInterval = setTimeout(() => {
+    startNextMode(game);
+  }, game.typeDuel.getTurnTime());
+}
 
+function updateTypeDuel(typedText, playerID, game) {
+  if (game.typeDuel.duelOver()) return;
+  io.to(game.gameID).emit("turnUpdateType", {typedText, playerID});
+
+  if (game.typeDuel.duelOver(typedText)) {
+    io.to(game.gameID).emit("typeDuelOver", playerID); // start shooting animation
+      // wait for players ready then do health update
+    let damagedPlayerID = game.getOtherPlayer(playerID);
+    updateHealth(game, damagedPlayerID, -30);
+  }
 };
 
 function updateHealth(game, id, hpChange) {
-  console.log("we got here");
   let player = game.players[id];
   player.health += hpChange;
   if (player.health <= 0) console.log("game over");
@@ -249,29 +267,44 @@ function updateHealth(game, id, hpChange) {
 }
 
 function startNextMode(game) {
-  const fromMode = game.currentMode;       // implement game.currentMode
+  const fromMode = game.currentMode;      
   let toMode;
-  if (game.roundCount === -1) {
-    toMode = game.gameModes[1]  // game over
-  }
-  else if (game.roundCount === 0) {
-    toMode = game.gameModes[2]; // go from waiting screen to start-decider
+  console.log("roundCount " + game.roundCount);
+  switch(true) {
+    case game.roundCount === -1:
+      toMode = game.gameModes[1]  // game over
+      break;
 
-    updateReactDuel(game);
-  } 
-  else if (game.roundCount % 2 === 1) {
-    toMode = game.gameModes[3];  // go to aim-game
+    case game.roundCount === 0:
+      toMode = game.gameModes[2]; // go from waiting screen to start-decider
+      updateReactDuel(game);
+      break;
 
-    let numTurns = 4 + Math.floor(Math.random() * 10);
-    if (numTurns % 2 === 1) numTurns++; //make numTurns even
+    case game.roundCount % 2 === 1:
+      toMode = game.gameModes[3];  // go to aim-game
 
-    game.aimDuel.initAimDuel(numTurns, 40, 900, 804, 2000); 
-    updateAimDuel(game);
-  } 
-  else {
-    let randomMode = Math.floor(Math.random() * (game.gameModes.length - 4)); // CHANGE THIS WHEN MORE MODES ADDED
-    toMode = game.gameModes[4 + randomMode];
-    if (toMode === game.gameModes[4]) update0XDuel(game, 100);    // change this to switch maybe
+      let numTurns = 10 + Math.floor(Math.random() * 10);
+      if (numTurns % 2 === 1) numTurns++; //make numTurns even
+
+      game.aimDuel.initAimDuel(numTurns, 40, 900, 804, 1000); 
+      updateAimDuel(game);
+      break;
+    
+    default:    //choose random other game
+      let randomMode = 4 + Math.floor(Math.random() * (game.gameModes.length - 4));
+      toMode = game.gameModes[randomMode];
+    
+      switch(toMode) {
+        case game.gameModes[4]: //noughts and crosses
+          update0XDuel(game, 100);  
+          break;
+        
+        case game.gameModes[5]: //typing game
+          startTypeDuel(game);
+          break;
+
+      // add more games
+    }
   }
 
   console.log(`from: ${fromMode} to: ${toMode}`);
@@ -281,14 +314,5 @@ function startNextMode(game) {
   game.playersReady = 0;
   io.to(game.gameID).emit("startNextMode", {fromMode, toMode});
 }
-
-// finds the relevant game
-
-// emit turnUpdate, true/false
-// on true, display timer on client side
-// server room emit interval updates
-// on click does turnUpdate
-// if timer runs out, endGame
-
 
 

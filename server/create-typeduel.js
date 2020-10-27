@@ -1,19 +1,25 @@
-const createTypeDuel = (time) => {
-    let allowedTime = time;
+const createTypeDuel = (typingTime) => {
+    let turnTime = typingTime;
+    let sentence;
+    let gameOver = false;
 
     const randomSentence = (sentenceBank) => {
         let randomChoice = Math.floor(Math.random() * sentenceBank.length);
-        return sentenceBank[randomChoice];
+        sentence = sentenceBank[randomChoice];
+        return sentence;
     };
 
-    const getTime = () => allowedTime;
+    const getTurnTime = () => turnTime;
 
-    const setTime = (time) => allowedTime = time;
+    const duelOver = (typedText) => {
+        if (typedText === sentence) gameOver = true;
+        return gameOver;
+    };
 
     return {
         randomSentence,
-        getTime,
-        setTime,
+        getTurnTime,
+        duelOver,
     };
 };
 
