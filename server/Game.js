@@ -6,8 +6,7 @@ const createAimDuel = require("./create-aimduel");
 const createReactDuel = require("./create-reactduel");
 const createTypeDuel = require("./create-typeduel");
 
-class Game {
-  constructor(player1, player2) {
+function Game (player1, player2) {
     this.players = {[player1]: new Player(player1, 100), [player2]: new Player(player2, 100)};
     this.gameID = player1 + player2 + Math.floor(Math.random() * 3000); //find a better way to make unique id
 
@@ -31,14 +30,14 @@ class Game {
 
   }
 
-  updateTurns() {
+Game.prototype.updateTurns = function() {
     [this.lastPlayer, this.currentPlayer] = [this.currentPlayer, this.lastPlayer];
   }
 
-  getOtherPlayer(playerID) {
+Game.prototype.getOtherPlayer = function(playerID) {
     let playerArr = Object.keys(this.players);
     return (playerID === playerArr[0]) ? playerArr[1] : playerArr[0];
   }
-}
+
 
 module.exports = Game;
