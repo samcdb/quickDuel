@@ -1,3 +1,6 @@
+
+NOTE: PLEASE SEE BrowserDuel for the C# server I am working on and browser-duel-client for the React client for this game. This repo is purely a proof of concept for the final game idea.
+
 This is a project I started to learn Javascript and try my hand at full stack development.
 
 It is a 1v1, real-time browser game built using Javascript, CSS and HTML with a large reliance on the Socket.io library. My goal was to create a competitive and fast paced game that would test
